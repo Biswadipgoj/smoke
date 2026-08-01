@@ -17,8 +17,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#0D1F2D"
       },
-      "package": "com.smokeless.ai",
-      "versionCode": 1
+      "package": "com.smokeless.ai"
     },
     "web": {
       "bundler": "metro",
