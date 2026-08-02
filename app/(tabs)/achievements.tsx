@@ -13,6 +13,7 @@ import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
 import { GlassCard } from '../../src/components/ui/GlassCard';
+import { LivingBackground } from '../../src/components/ui/LivingBackground';
 
 interface AchievementDef {
   id: string;
@@ -93,7 +94,7 @@ function AchievementCard({
 
 export default function AchievementsScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { isDark, colors } = useTheme();
   const logs = useAppStore((s) => s.logs);
   const earnedAchievements = useAppStore((s) => s.earnedAchievements);
   const delaySessions = useAppStore((s) => s.delaySessions);
@@ -129,6 +130,7 @@ export default function AchievementsScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
+      {isDark && <LivingBackground subdued />}
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.text }]}>{t.achievementsTitle}</Text>
 

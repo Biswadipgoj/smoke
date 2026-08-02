@@ -17,7 +17,9 @@ import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
 import { GlassCard } from '../../src/components/ui/GlassCard';
+import { LivingBackground } from '../../src/components/ui/LivingBackground';
 import { localeLabels, Locale } from '../../src/constants/translations';
+import { PERSONA_ORDER, PERSONAS } from '../../src/constants/personas';
 
 function SettingRow({
   label,
@@ -115,6 +117,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
+      {isDark && <LivingBackground subdued />}
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.text }]}>{t.settingsTitle}</Text>
 
@@ -137,6 +140,38 @@ export default function SettingsScreen() {
               )}
             </TouchableOpacity>
           ))}
+        </GlassCard>
+
+        {/* Companion */}
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.settingsCompanion}</Text>
+        <GlassCard style={styles.card}>
+          {PERSONA_ORDER.map((id, i, arr) => {
+            const p = PERSONAS[id];
+            const active = profile.companionPersona === id;
+            return (
+              <TouchableOpacity
+                key={id}
+                style={[
+                  styles.settingRow,
+                  { borderBottomColor: colors.glassBorder },
+                  i === arr.length - 1 && { borderBottomWidth: 0 },
+                ]}
+                onPress={() => updateProfile({ companionPersona: id })}
+                activeOpacity={0.7}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 }}>
+                  <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.settingLabel, { color: active ? p.accent : colors.text }]}>
+                      {p.name} · {t[p.nameKey]}
+                    </Text>
+                    <Text style={[styles.settingValue, { color: colors.textMuted }]}>{t[p.taglineKey]}</Text>
+                  </View>
+                </View>
+                {active && <Text style={[styles.selectedCheck, { color: p.accent }]}>✓</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </GlassCard>
 
         {/* Theme */}

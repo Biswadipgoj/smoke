@@ -16,6 +16,8 @@ import { useAppStore, ChatMessage, computeCurrentStreak, computeMoneySaved } fro
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
+import { getPersona, Persona } from '../../src/constants/personas';
+import { LivingBackground } from '../../src/components/ui/LivingBackground';
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
@@ -41,12 +43,13 @@ type CoachContext = {
   hour: number;
 };
 
-async function fetchGeminiResponse(userMsg: string, ctx: CoachContext, history: ChatMessage[]): Promise<string> {
+async function fetchGeminiResponse(userMsg: string, ctx: CoachContext, history: ChatMessage[], persona: Persona): Promise<string> {
   if (!GEMINI_API_KEY) {
     return "API Key is missing. Please add EXPO_PUBLIC_GEMINI_API_KEY to your environment.";
   }
 
-  const systemPrompt = `You are a warm, non-judgmental, and deeply empathetic smoking cessation coach.
+  const systemPrompt = `You are ${persona.name}, a warm, non-judgmental, and deeply empathetic smoking cessation companion.
+${persona.promptFragment}
 Your goal is to support the user in reducing or quitting smoking.
 
 Here are the user's REAL-TIME stats:
@@ -106,10 +109,10 @@ GUIDELINES:
 }
 
 // ── Typing Indicator Component ──
-const TypingIndicator = ({ colors }: { colors: any }) => {
+const TypingIndicator = ({ colors, avatar }: { colors: any; avatar: string }) => {
   return (
     <Animated.View entering={SlideInLeft.springify().damping(12)} layout={Layout.springify()} style={[styles.messageBubble, styles.coachBubble]}>
-      <Text style={styles.coachAvatar}>🌿</Text>
+      <Text style={styles.coachAvatar}>{avatar}</Text>
       <View style={[styles.bubbleContent, { backgroundColor: colors.bgCard, borderColor: colors.glassBorder, borderWidth: 1, flexDirection: 'row', gap: 4, height: 42, alignItems: 'center' }]}>
         <Animated.View entering={ZoomIn.duration(300).delay(0)} style={[styles.typingDot, { backgroundColor: Colors.primary }]} />
         <Animated.View entering={ZoomIn.duration(300).delay(150)} style={[styles.typingDot, { backgroundColor: Colors.primary }]} />
@@ -122,8 +125,9 @@ const TypingIndicator = ({ colors }: { colors: any }) => {
 
 export default function CoachScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { chatHistory, addChatMessage, profile, logs, delaySessions } = useAppStore();
+  const persona = getPersona(profile?.companionPersona);
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -182,7 +186,7 @@ export default function CoachScreen() {
     }
 
     // Call Real Gemini API
-    const responseText = await fetchGeminiResponse(trimmed, ctx, chatHistory);
+    const responseText = await fetchGeminiResponse(trimmed, ctx, chatHistory, persona);
     
     addChatMessage({
       id: `msg_${Date.now()}_coach`,
@@ -201,9 +205,16 @@ export default function CoachScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
+      {isDark && <LivingBackground subdued />}
       <Animated.View entering={FadeIn.duration(400)} style={{ flex: 1 }}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>🌿 AI Coach</Text>
+          <View style={[styles.headerAvatar, { backgroundColor: `${persona.accent}22` }]}>
+            <Text style={styles.headerAvatarText}>{persona.emoji}</Text>
+          </View>
+          <View>
+            <Text style={[styles.title, { color: colors.text }]}>{persona.name}</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{t[persona.nameKey]}</Text>
+          </View>
         </View>
 
         <KeyboardAvoidingView
@@ -220,10 +231,10 @@ export default function CoachScreen() {
           >
             {chatHistory.length === 0 && (
               <Animated.View entering={FadeInDown.duration(600).delay(200)} style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🤝</Text>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Powered by Gemini</Text>
+                <Text style={styles.emptyEmoji}>{persona.emoji}</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>{t.coachEmptyTitle}</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                  I know your stats, your triggers, and your progress. I'm here to help, not judge. Try a prompt below or tell me what's on your mind.
+                  {t.coachEmptySubtitle}
                 </Text>
               </Animated.View>
             )}
@@ -238,7 +249,7 @@ export default function CoachScreen() {
                   msg.role === 'user' ? styles.userBubble : styles.coachBubble,
                 ]}
               >
-                {msg.role === 'coach' && <Text style={styles.coachAvatar}>🌿</Text>}
+                {msg.role === 'coach' && <Text style={styles.coachAvatar}>{persona.emoji}</Text>}
                 <View style={[
                   styles.bubbleContent,
                   msg.role === 'user'
@@ -256,7 +267,7 @@ export default function CoachScreen() {
               </Animated.View>
             ))}
 
-            {isTyping && <TypingIndicator colors={colors} />}
+            {isTyping && <TypingIndicator colors={colors} avatar={persona.emoji} />}
           </ScrollView>
 
           {/* Quick prompts */}
@@ -310,8 +321,11 @@ export default function CoachScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-  title: { fontFamily: FontFamily.bold, fontSize: FontSize.xl },
+  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  headerAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  headerAvatarText: { fontSize: 20 },
+  title: { fontFamily: FontFamily.bold, fontSize: FontSize.lg },
+  headerSubtitle: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, marginTop: -2 },
 
   chatList: { flex: 1 },
   chatContent: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xl },
