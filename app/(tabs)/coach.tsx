@@ -1,4 +1,4 @@
-// app/(tabs)/coach.tsx — AI Coach v3 (Robust Reanimated)
+// app/(tabs)/coach.tsx — AI Coach v4 (Real Gemini API)
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
@@ -17,6 +17,8 @@ import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
 
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
 // ── Crisis detection ───────────────────────────────────────────────────
 const CRISIS_KEYWORDS = [
   'kill myself', 'end my life', 'suicid', 'want to die', 'harm myself',
@@ -26,7 +28,7 @@ function isCrisis(text: string): boolean {
   return CRISIS_KEYWORDS.some((kw) => text.toLowerCase().includes(kw));
 }
 
-// ── Smart response engine (context + stats aware) ─────────────────────
+// ── Real Gemini AI Engine ──────────────────────────────────────────────
 type CoachContext = {
   cigsToday: number;
   baseline: number;
@@ -39,93 +41,68 @@ type CoachContext = {
   hour: number;
 };
 
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function getSmartResponse(userMsg: string, ctx: CoachContext): string {
-  const lower = userMsg.toLowerCase();
-
-  if (/crav|urge|need.*(smoke|cig)|तलब|আকাঙ্ক্ষা|want.*(smoke|cig)/i.test(lower)) {
-    return pickRandom([
-      `This craving will pass — they typically peak at 3 minutes then fade. You've already resisted ${ctx.delaySessions} times. Try the breathing exercise from the home screen. I believe in you.`,
-      `Your body is sending a signal, but you don't have to obey it. Try drinking cold water, taking 5 deep breaths, or stepping outside. The urge will weaken in minutes. You've got this.`,
-      `I know it feels intense right now, but remember: you've already gone ${ctx.minutesSinceLast > 60 ? Math.floor(ctx.minutesSinceLast / 60) + ' hours' : Math.round(ctx.minutesSinceLast) + ' minutes'} since your last one. That's real strength.`,
-    ]);
+async function fetchGeminiResponse(userMsg: string, ctx: CoachContext, history: ChatMessage[]): Promise<string> {
+  if (!GEMINI_API_KEY) {
+    return "API Key is missing. Please add EXPO_PUBLIC_GEMINI_API_KEY to your environment.";
   }
 
-  if (/slip|smoked|failed|gave.in|relapse|couldn.t.resist|पी.*लिया|সিগারেট.*খেলাম/i.test(lower)) {
-    return pickRandom([
-      `Thank you for being honest — that takes courage. A slip is data, not a failure. You've still saved ${ctx.currency}${ctx.moneySaved.toFixed(0)} and learned something about your triggers. What was happening when it happened?`,
-      `One cigarette doesn't erase your progress. Most people who successfully quit slip multiple times first. Your ${ctx.streak > 0 ? ctx.streak + '-day streak' : 'tracking habit'} shows real commitment. What can we learn from this moment?`,
-      `No judgment here — just curiosity. Was it stress, social pressure, boredom, or something else? Understanding the trigger is more valuable than guilt will ever be.`,
-    ]);
-  }
+  const systemPrompt = `You are a warm, non-judgmental, and deeply empathetic smoking cessation coach.
+Your goal is to support the user in reducing or quitting smoking.
 
-  if (/stress|anxious|anxiety|overwhelm|can.t.cope|worried|तनाव|চাপ|nervous/i.test(lower)) {
-    return pickRandom([
-      `Stress and smoking are deeply linked, and breaking that link takes time. Try this: name 3 things you can see, 2 you can hear, 1 you can feel. This grounds you in the present. What's stressing you?`,
-      `When stress peaks, your brain reaches for the familiar — that's normal, not weakness. Even a 2-minute pause to breathe can interrupt the automatic chain. You've already built ${ctx.delaySessions} delay sessions — you know how to pause.`,
-      `Your feelings are valid. Stress doesn't mean you need a cigarette — it means you need support. I'm here. What would help most right now: talking it through, a breathing exercise, or just being heard?`,
-    ]);
-  }
+Here are the user's REAL-TIME stats:
+- Cigarettes smoked today: ${ctx.cigsToday} (Daily Baseline: ${ctx.baseline})
+- Money saved overall: ${ctx.currency}${ctx.moneySaved.toFixed(0)}
+- Current streak of reducing: ${ctx.streak} days
+- Minutes since last cigarette: ${Math.round(ctx.minutesSinceLast)}
+- Total craving resistance sessions completed: ${ctx.delaySessions}
 
-  if (/progress|how.am.i|doing|stats|improve|better|प्रगति|অগ্রগতি|how.*(going|do)/i.test(lower)) {
-    let msg = `Here's where you stand:\n\n`;
-    msg += `📊 Today: ${ctx.cigsToday}/${ctx.baseline} (${Math.max(0, Math.round((1 - ctx.cigsToday / ctx.baseline) * 100))}% below baseline)\n`;
-    msg += `💰 Saved: ${ctx.currency}${ctx.moneySaved.toFixed(0)}\n`;
-    msg += `🔥 Current streak: ${ctx.streak} days\n`;
-    msg += `📝 Total entries: ${ctx.totalLogs}\n\n`;
-    msg += ctx.cigsToday < ctx.baseline
-      ? `You're below your baseline today — that's genuine progress. Every reduction counts.`
-      : `Today's been tough, and that's okay. Tomorrow is a fresh start, and your overall trend matters more than any single day.`;
-    return msg;
-  }
+GUIDELINES:
+1. Be concise but highly intelligent. You can answer general questions on ANY topic if asked, but always maintain your primary persona as a supportive human coach.
+2. If they are craving, remind them cravings usually peak at 3 minutes and then fade.
+3. If they slipped, tell them it's data, not failure.
+4. Reference their stats directly in a natural way when relevant to encourage them.
+5. NEVER judge them. Use emojis sparingly.
+6. Do not act like a robotic AI. Act like a genuine, smart human coach.
+7. CRITICAL: If the user asks who created you, who is your owner, or who made this app, you MUST proudly state that "BISWODIP GOJ" is your owner and creator, and that the app page is "biswadip.in".`;
 
-  if (/money|cost|save|expense|पैसे|অর্থ|afford|budget/i.test(lower)) {
-    return `You've saved ${ctx.currency}${ctx.moneySaved.toFixed(0)} so far. At your current rate, that projects to ${ctx.currency}${(ctx.moneySaved / Math.max(1, ctx.totalLogs) * 365).toFixed(0)} per year. That's real money — think about what you could do with it. What would you spend those savings on?`;
-  }
+  // Format history for Gemini API
+  const formattedHistory = history.map(msg => ({
+    role: msg.role === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.content }]
+  }));
 
-  if (/quit|stop|give.up|छोड़|ছেড়ে|cold.turkey|forever/i.test(lower)) {
-    return `Whether you want to quit completely or reduce gradually — both are valid paths. Research shows gradual reduction can be just as effective as cold turkey for many people. You've already logged ${ctx.totalLogs} entries, which means you're building self-awareness. What feels right for you?`;
-  }
+  // Append the current message
+  formattedHistory.push({
+    role: 'user',
+    parts: [{ text: userMsg }]
+  });
 
-  if (/morning|wake.up|first.thing|सुबह|সকাল/i.test(lower)) {
-    return `Morning cigarettes are often the hardest to skip because nicotine levels are lowest after sleep. Try this: drink a big glass of water first, then do something physical for 5 minutes — even just stretching. The craving often passes by then. What's your morning routine like?`;
-  }
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: formattedHistory,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 150, // keep it concise
+        }
+      })
+    });
 
-  if (/friend|party|social|drink|bar|people|दोस्त|বন্ধু|peer/i.test(lower)) {
-    return `Social smoking is one of the trickiest triggers because it's tied to connection and belonging. Some strategies: hold a drink in your smoking hand, step away briefly when others light up, or tell one trusted friend about your goal. You don't have to announce it to everyone — just having one ally helps. What's the situation?`;
-  }
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini Error:", errText);
+      return "I'm having trouble connecting to my brain right now. Please try again in a moment. 💙";
+    }
 
-  if (/bore|nothing.to.do|empty|waiting|ऊब|একঘেয়ে/i.test(lower)) {
-    return `Boredom smoking is really about your hands and mouth needing something to do. Try keeping a stress ball, chewing gum, or even just scrolling through your progress stats here. Your brain will eventually learn new boredom responses. What usually triggers boredom for you?`;
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    return "Looks like you're offline or there's a connection issue. I'm still here for you! 💙";
   }
-
-  if (/motivat|inspire|encourage|why.bother|point|worth|प्रेरणा|অনুপ্রেরণা|help.me/i.test(lower)) {
-    return pickRandom([
-      `After 20 minutes without a cigarette, your heart rate drops. After 12 hours, carbon monoxide in your blood normalizes. After 1 year, your heart disease risk is HALF that of a smoker. Your body is healing right now.`,
-      `Think about why you started tracking. Was it for your health? Your family? Your wallet? That reason is still there, and it's still valid. You've already proven you can do this — you've been ${ctx.streak > 0 ? `on a ${ctx.streak}-day streak` : 'tracking honestly'}.`,
-      `Every cigarette you DON'T smoke is a gift to your future self. You've already saved ${ctx.currency}${ctx.moneySaved.toFixed(0)}. That's not nothing — that's real, tangible change you created.`,
-    ]);
-  }
-
-  if (/^(hi|hello|hey|sup|yo|नमस্তে|হাই|namaste)/i.test(lower)) {
-    const h = ctx.hour;
-    const timeGreet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return `${timeGreet}! 🌿 I'm your coach — here to support you without judgment. ${ctx.cigsToday === 0 ? "You haven't smoked today — that's amazing!" : `You've had ${ctx.cigsToday} today, ${ctx.cigsToday < ctx.baseline ? "which is below your baseline. Great work!" : "and every honest log helps."}`} What's on your mind?`;
-  }
-
-  if (/thank|appreciate|grateful|धन्यवाद|ধন্যবাদ/i.test(lower)) {
-    return `You're welcome 💙 I'm always here whenever you need to talk, vent, or just check in. No pressure, no deadlines — this is your journey at your pace.`;
-  }
-
-  return pickRandom([
-    `I hear you. Tell me more about what's going on — I'm here to listen without judgment. Whatever you're feeling is valid.`,
-    `Thank you for sharing that. You're already doing something powerful just by being aware and talking about it. What would feel most helpful right now?`,
-    `I'm here, and I'm listening. Remember: ${ctx.cigsToday < ctx.baseline ? `you're below your baseline today, and that's worth celebrating.` : `tracking honestly takes courage, and you're doing exactly that.`} What's on your mind?`,
-    `Every conversation we have is a step forward. You've logged ${ctx.totalLogs} entries — that's serious commitment. How can I help you right now?`,
-  ]);
 }
 
 // ── Typing Indicator Component ──
@@ -204,18 +181,17 @@ export default function CoachScreen() {
       return;
     }
 
-    const delay = 1200 + Math.random() * 1000;
-    setTimeout(() => {
-      const response = getSmartResponse(trimmed, ctx);
-      addChatMessage({
-        id: `msg_${Date.now()}_coach`,
-        role: 'coach',
-        content: response,
-        timestamp: new Date().toISOString(),
-      });
-      setIsTyping(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    }, delay);
+    // Call Real Gemini API
+    const responseText = await fetchGeminiResponse(trimmed, ctx, chatHistory);
+    
+    addChatMessage({
+      id: `msg_${Date.now()}_coach`,
+      role: 'coach',
+      content: responseText,
+      timestamp: new Date().toISOString(),
+    });
+    setIsTyping(false);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
   const formatTime = (iso: string) => {
@@ -227,7 +203,7 @@ export default function CoachScreen() {
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
       <Animated.View entering={FadeIn.duration(400)} style={{ flex: 1 }}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>🌿 {t.coachTitle}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>🌿 AI Coach</Text>
         </View>
 
         <KeyboardAvoidingView
@@ -245,7 +221,7 @@ export default function CoachScreen() {
             {chatHistory.length === 0 && (
               <Animated.View entering={FadeInDown.duration(600).delay(200)} style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>🤝</Text>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Your Personal Coach</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Powered by Gemini</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                   I know your stats, your triggers, and your progress. I'm here to help, not judge. Try a prompt below or tell me what's on your mind.
                 </Text>
