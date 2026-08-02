@@ -1,0 +1,38 @@
+name: EAS Update (OTA)
+
+# Publishes an over-the-air JS/asset update to the "preview" channel — the same
+# channel the APK from the `preview` build profile subscribes to. Installed apps
+# pull it silently on next launch (see app/_layout.tsx). Native/config changes
+# still require a fresh APK build.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update:
+    name: Publish OTA update
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🚀 Publish EAS Update
+        run: eas update --channel preview --message "${{ github.event.head_commit.message }}" --non-interactive
