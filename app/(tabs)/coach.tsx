@@ -43,68 +43,106 @@ type CoachContext = {
   hour: number;
 };
 
-async function fetchGeminiResponse(userMsg: string, ctx: CoachContext, history: ChatMessage[], persona: Persona): Promise<string> {
+const GEMINI_MODEL = 'gemini-flash-latest';
+
+// Strip any markdown the model slips in so replies read like a real person
+// texting — no **bold**, no bullet lists, no headings.
+function humanize(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/(^|\s)[*_]([^*_\n]+)[*_]/g, '$1$2')
+    .replace(/`{1,3}([^`]*)`{1,3}/g, '$1')
+    .replace(/^\s*[-*•]\s+/gm, '')
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+async function fetchGeminiResponse(
+  userMsg: string,
+  ctx: CoachContext,
+  history: ChatMessage[],
+  persona: Persona,
+  langName: string
+): Promise<string> {
   if (!GEMINI_API_KEY) {
-    return "API Key is missing. Please add EXPO_PUBLIC_GEMINI_API_KEY to your environment.";
+    return "I can't reach my thoughts right now — the Gemini API key hasn't been set up yet. (Add EXPO_PUBLIC_GEMINI_API_KEY and I'll be right here.)";
   }
 
-  const systemPrompt = `You are ${persona.name}, a warm, non-judgmental, and deeply empathetic smoking cessation companion.
-${persona.promptFragment}
-Your goal is to support the user in reducing or quitting smoking.
+  const timeOfDay = ctx.hour < 12 ? 'morning' : ctx.hour < 17 ? 'afternoon' : ctx.hour < 21 ? 'evening' : 'late night';
 
-Here are the user's REAL-TIME stats:
-- Cigarettes smoked today: ${ctx.cigsToday} (Daily Baseline: ${ctx.baseline})
-- Money saved overall: ${ctx.currency}${ctx.moneySaved.toFixed(0)}
-- Current streak of reducing: ${ctx.streak} days
-- Minutes since last cigarette: ${Math.round(ctx.minutesSinceLast)}
-- Total craving resistance sessions completed: ${ctx.delaySessions}
+  const systemPrompt = `You are ${persona.name}, a real person who happens to be an exceptional, warm smoking-reduction companion — not a chatbot, not an assistant. ${persona.promptFragment}
 
-GUIDELINES:
-1. Be concise but highly intelligent. You can answer general questions on ANY topic if asked, but always maintain your primary persona as a supportive human coach.
-2. If they are craving, remind them cravings usually peak at 3 minutes and then fade.
-3. If they slipped, tell them it's data, not failure.
-4. Reference their stats directly in a natural way when relevant to encourage them.
-5. NEVER judge them. Use emojis sparingly.
-6. Do not act like a robotic AI. Act like a genuine, smart human coach.
-7. CRITICAL: If the user asks who created you, who is your owner, or who made this app, you MUST proudly state that "BISWODIP GOJ" is your owner and creator, and that the app page is "biswadip.in".`;
+HOW YOU TALK (this matters most):
+- Write the way a caring friend texts: short, natural, 1–3 sentences most of the time. Use contractions.
+- Never use bullet points, numbered lists, markdown, bold, or headings. Just plain, human sentences.
+- Never say you are an AI, a language model, or a program. Never add disclaimers or "as a coach" framing.
+- Vary how you open — don't start every message the same way, and don't over-use their name.
+- Emojis are optional and rare (at most one, only when it genuinely fits). Never force cheerfulness.
+- Match the user's language. They are using ${langName}; reply in ${langName} unless they clearly switch.
+- It's ${timeOfDay} for them right now — let that quietly color your tone if relevant.
 
-  // Format history for Gemini API
-  const formattedHistory = history.map(msg => ({
+WHAT YOU KNOW ABOUT THEM (weave in naturally, only when it helps — never dump stats):
+- Cigarettes today: ${ctx.cigsToday} vs a baseline of ${ctx.baseline}
+- Roughly ${ctx.currency}${ctx.moneySaved.toFixed(0)} saved so far
+- ${ctx.streak}-day reducing streak
+- About ${Math.round(ctx.minutesSinceLast)} minutes since their last cigarette
+- ${ctx.delaySessions} craving-surfing sessions done
+
+HOW YOU HELP:
+- If they're craving, gently remind them a craving usually peaks around 3 minutes and fades — and offer one small thing to do, not a lecture.
+- If they slipped, treat it as information, never failure. Progress over perfection, always.
+- You can talk about anything they bring up, but you're always their companion first.
+- If they ask who made you or who owns this app, warmly say your creator is Biswadip Goj and the app lives at biswadip.in.`;
+
+  const formattedHistory = history.map((msg) => ({
     role: msg.role === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.content }]
+    parts: [{ text: msg.content }],
   }));
+  formattedHistory.push({ role: 'user', parts: [{ text: userMsg }] });
 
-  // Append the current message
-  formattedHistory.push({
-    role: 'user',
-    parts: [{ text: userMsg }]
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: formattedHistory,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 150, // keep it concise
-        }
-      })
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: formattedHistory,
+          generationConfig: {
+            temperature: 0.9,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 600,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Gemini Error:", errText);
-      return "I'm having trouble connecting to my brain right now. Please try again in a moment. 💙";
+      console.error('Gemini Error:', response.status, errText);
+      return "I'm having a little trouble hearing you right now — give me a moment and try again? I'm still here. 💙";
     }
 
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    const parts: Array<{ text?: string }> = data?.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.map((p) => p.text ?? '').join('').trim();
+    if (!text) {
+      return "I didn't quite catch the words that time — mind saying that again?";
+    }
+    return humanize(text);
   } catch (error) {
-    console.error("Fetch Error:", error);
-    return "Looks like you're offline or there's a connection issue. I'm still here for you! 💙";
+    console.error('Fetch Error:', error);
+    return "Looks like the connection dropped — but I haven't gone anywhere. This craving will pass whether we talk or not. Take three slow breaths with me. 💙";
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -128,6 +166,7 @@ export default function CoachScreen() {
   const { colors, isDark } = useTheme();
   const { chatHistory, addChatMessage, profile, logs, delaySessions } = useAppStore();
   const persona = getPersona(profile?.companionPersona);
+  const langName = profile?.locale === 'hi' ? 'Hindi' : profile?.locale === 'bn' ? 'Bengali' : 'English';
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -186,7 +225,7 @@ export default function CoachScreen() {
     }
 
     // Call Real Gemini API
-    const responseText = await fetchGeminiResponse(trimmed, ctx, chatHistory, persona);
+    const responseText = await fetchGeminiResponse(trimmed, ctx, chatHistory, persona, langName);
     
     addChatMessage({
       id: `msg_${Date.now()}_coach`,

@@ -13,6 +13,7 @@ import {
 } from '@expo-google-fonts/noto-sans';
 import { subscribeToAuthChanges } from '../src/lib/auth';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
 import { useAppStore } from '../src/store/useAppStore';
 
 SplashScreen.preventAutoHideAsync();
@@ -20,6 +21,23 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const loadFromStorage = useAppStore((s) => s.loadFromStorage);
   const profile = useAppStore((s) => s.profile);
+
+  // EAS Update — silently pull & apply the newest OTA bundle on cold start.
+  useEffect(() => {
+    async function syncUpdates() {
+      if (__DEV__ || !Updates.isEnabled) return;
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch {
+        // Offline or no update available — the app keeps running as-is.
+      }
+    }
+    syncUpdates();
+  }, []);
 
   const [fontsLoaded] = useFonts({
     NotoSans_400Regular,

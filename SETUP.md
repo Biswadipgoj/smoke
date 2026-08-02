@@ -147,3 +147,60 @@ d:\smoke\
 │       └── BreathingPacer.tsx
 └── SETUP.md
 ```
+
+---
+
+## Build an installable APK (not AAB)
+
+The `eas.json` profiles are set to `android.buildType: "apk"`, so every profile
+produces a directly-installable **APK**.
+
+```bash
+npm install -g eas-cli      # once
+eas login                   # once
+
+# Fast internal test APK:
+eas build --platform android --profile preview
+
+# Release APK:
+eas build --platform android --profile production
+```
+
+When the build finishes, EAS prints a URL to download the `.apk`.
+
+## EAS Update (over-the-air updates)
+
+The app is wired for OTA updates:
+
+- `app.json` → `updates.url` + `runtimeVersion` (`appVersion` policy)
+- `eas.json` profiles each declare a `channel` (`preview` / `production`)
+- `app/_layout.tsx` checks for and applies the newest bundle on cold start
+
+Publish a JS/asset update (no rebuild needed) to the channel your installed
+APK uses:
+
+```bash
+eas update --channel preview  --message "what changed"   # for preview APKs
+eas update --channel production --message "what changed"  # for release APKs
+```
+
+`.github/workflows/eas-update.yml` also publishes to the `preview` channel on
+every push to `main`. **Native or config changes** (new native module, icon,
+permissions, SDK bump) still require a fresh APK build.
+
+## Gemini AI Coach — make it work in a build
+
+The coach reads `EXPO_PUBLIC_GEMINI_API_KEY`. A local `.env` only works for
+`expo start`; **EAS builds and updates need the key stored on EAS** so it is
+inlined into the bundle:
+
+```bash
+eas env:create --name EXPO_PUBLIC_GEMINI_API_KEY --value "YOUR_KEY" \
+  --visibility sensitive --environment preview
+eas env:create --name EXPO_PUBLIC_GEMINI_API_KEY --value "YOUR_KEY" \
+  --visibility sensitive --environment production
+```
+
+Then rebuild (or `eas update`) so the key ships with the app. The model used is
+`gemini-flash-latest`; responses are tuned to sound like a real person (plain
+sentences, the user's language, no markdown or "as an AI" disclaimers).

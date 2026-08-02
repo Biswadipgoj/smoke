@@ -8,6 +8,13 @@
     "userInterfaceStyle": "automatic",
     "scheme": "smokeless",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/17f089b4-8579-460c-8dc9-f96f44732258",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.smokeless.ai"
