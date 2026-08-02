@@ -1,4 +1,4 @@
-// app/onboarding.tsx
+// app/onboarding.tsx — a warm first meeting with your companion
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -19,9 +19,11 @@ import { useTranslation } from '../src/hooks/useTranslation';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
 import { translations, localeLabels, Locale } from '../src/constants/translations';
 import { PrimaryButton } from '../src/components/ui/PrimaryButton';
+import { LivingBackground } from '../src/components/ui/LivingBackground';
+import { PERSONA_ORDER, PERSONAS, PersonaId } from '../src/constants/personas';
 
 const { width } = Dimensions.get('window');
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export default function Onboarding() {
   const { t } = useTranslation();
@@ -29,12 +31,9 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // Step 0 — Welcome
-  // Step 1 — Language
-  // Step 2 — Baseline
-  // Step 3 — Motivation + Goal
-
+  // Step 0 Welcome · 1 Language · 2 Companion · 3 Baseline · 4 Motivation+Goal
   const [selectedLocale, setSelectedLocale] = useState<Locale>(profile?.locale ?? 'en');
+  const [persona, setPersona] = useState<PersonaId>(profile?.companionPersona ?? 'guide');
   const [dailyCount, setDailyCount] = useState(String(profile?.dailyBaseline ?? '10'));
   const [costPerPack, setCostPerPack] = useState(String(profile?.costPerPack ?? '250'));
   const [cigsPerPack, setCigsPerPack] = useState(String(profile?.cigsPerPack ?? '20'));
@@ -45,26 +44,17 @@ export default function Onboarding() {
   const currentT = translations[selectedLocale];
 
   const animateNext = () => {
-    Animated.timing(slideAnim, {
-      toValue: -1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.timing(slideAnim, { toValue: -1, duration: 180, useNativeDriver: true }).start(() => {
       slideAnim.setValue(1);
       setStep((s) => s + 1);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(slideAnim, { toValue: 0, duration: 240, useNativeDriver: true }).start();
     });
   };
 
   const handleNext = () => {
-    if (step === 1) {
-      updateProfile({ locale: selectedLocale });
-    }
-    if (step === 2) {
+    if (step === 1) updateProfile({ locale: selectedLocale });
+    if (step === 2) updateProfile({ companionPersona: persona });
+    if (step === 3) {
       updateProfile({
         dailyBaseline: Math.min(100, Math.max(1, parseInt(dailyCount) || 10)),
         costPerPack: parseFloat(costPerPack) || 250,
@@ -72,11 +62,8 @@ export default function Onboarding() {
         currency,
       });
     }
-    if (step < TOTAL_STEPS - 1) {
-      animateNext();
-    } else {
-      handleComplete();
-    }
+    if (step < TOTAL_STEPS - 1) animateNext();
+    else handleComplete();
   };
 
   const handleComplete = () => {
@@ -91,6 +78,7 @@ export default function Onboarding() {
         name: undefined,
       }),
       locale: selectedLocale,
+      companionPersona: persona,
       dailyBaseline: Math.min(100, Math.max(1, parseInt(dailyCount) || 10)),
       costPerPack: parseFloat(costPerPack) || 250,
       cigsPerPack: Math.min(40, Math.max(1, parseInt(cigsPerPack) || 20)),
@@ -111,55 +99,45 @@ export default function Onboarding() {
 
   const slideX = slideAnim.interpolate({
     inputRange: [-1, 0, 1],
-    outputRange: [-width * 0.3, 0, width * 0.3],
+    outputRange: [-width * 0.25, 0, width * 0.25],
+  });
+  const fade = slideAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [0, 1, 0],
   });
 
   return (
     <SafeAreaView style={styles.root}>
+      <LivingBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* Progress dots */}
         <View style={styles.dotsRow}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i <= step && styles.dotActive]}
-            />
+            <View key={i} style={[styles.dot, i <= step && styles.dotActive]} />
           ))}
         </View>
 
-        <Animated.View
-          style={[styles.content, { transform: [{ translateX: slideX }], opacity: slideAnim.interpolate({ inputRange: [-1, -0.5, 0, 0.5, 1], outputRange: [0, 0, 1, 0, 0] }).interpolate ? undefined : undefined }]}
-        >
+        <Animated.View style={[styles.content, { transform: [{ translateX: slideX }], opacity: fade }]}>
           <ScrollView
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
             {step === 0 && <StepWelcome t={currentT} />}
-            {step === 1 && (
-              <StepLanguage
-                t={currentT}
-                selected={selectedLocale}
-                onSelect={setSelectedLocale}
-              />
-            )}
-            {step === 2 && (
+            {step === 1 && <StepLanguage t={currentT} selected={selectedLocale} onSelect={setSelectedLocale} />}
+            {step === 2 && <StepPersona t={currentT} selected={persona} onSelect={setPersona} />}
+            {step === 3 && (
               <StepBaseline
                 t={currentT}
-                dailyCount={dailyCount}
-                setDailyCount={setDailyCount}
-                costPerPack={costPerPack}
-                setCostPerPack={setCostPerPack}
-                cigsPerPack={cigsPerPack}
-                setCigsPerPack={setCigsPerPack}
-                currency={currency}
-                setCurrency={setCurrency}
+                dailyCount={dailyCount} setDailyCount={setDailyCount}
+                costPerPack={costPerPack} setCostPerPack={setCostPerPack}
+                cigsPerPack={cigsPerPack} setCigsPerPack={setCigsPerPack}
+                currency={currency} setCurrency={setCurrency}
               />
             )}
-            {step === 3 && (
+            {step === 4 && (
               <StepGoal
                 t={currentT}
                 motivations={selectedMotivations}
@@ -171,13 +149,9 @@ export default function Onboarding() {
           </ScrollView>
         </Animated.View>
 
-        {/* Bottom actions */}
         <View style={styles.actions}>
           {step > 0 && (
-            <TouchableOpacity
-              onPress={() => setStep((s) => s - 1)}
-              style={styles.backBtn}
-            >
+            <TouchableOpacity onPress={() => setStep((s) => s - 1)} style={styles.backBtn}>
               <Text style={styles.backText}>← {currentT.back}</Text>
             </TouchableOpacity>
           )}
@@ -206,9 +180,9 @@ function StepWelcome({ t }: { t: typeof translations.en }) {
       <Text style={styles.stepSubtitle}>{t.onboardingWelcomeSubtitle}</Text>
       <View style={styles.featureList}>
         {[
-          { icon: '⏱️', text: 'Guided craving delay sessions' },
-          { icon: '🤝', text: 'Non-judgmental AI coaching' },
-          { icon: '📊', text: 'Honest progress tracking' },
+          { icon: '🫁', text: 'Ride cravings with guided interventions' },
+          { icon: '🤝', text: 'A companion who never judges you' },
+          { icon: '📖', text: 'Progress told as a story, not a spreadsheet' },
           { icon: '🌍', text: 'English · हिंदी · বাংলা' },
         ].map((f, i) => (
           <View key={i} style={styles.featureRow}>
@@ -221,14 +195,8 @@ function StepWelcome({ t }: { t: typeof translations.en }) {
   );
 }
 
-function StepLanguage({
-  t,
-  selected,
-  onSelect,
-}: {
-  t: typeof translations.en;
-  selected: Locale;
-  onSelect: (l: Locale) => void;
+function StepLanguage({ t, selected, onSelect }: {
+  t: typeof translations.en; selected: Locale; onSelect: (l: Locale) => void;
 }) {
   return (
     <View style={styles.stepContainer}>
@@ -241,9 +209,7 @@ function StepLanguage({
           style={[styles.langOption, selected === l && styles.langOptionSelected]}
           onPress={() => onSelect(l)}
         >
-          <Text style={[styles.langLabel, selected === l && styles.langLabelSelected]}>
-            {localeLabels[l]}
-          </Text>
+          <Text style={[styles.langLabel, selected === l && styles.langLabelSelected]}>{localeLabels[l]}</Text>
           {selected === l && <Text style={styles.checkmark}>✓</Text>}
         </TouchableOpacity>
       ))}
@@ -251,12 +217,44 @@ function StepLanguage({
   );
 }
 
+function StepPersona({ t, selected, onSelect }: {
+  t: typeof translations.en; selected: PersonaId; onSelect: (p: PersonaId) => void;
+}) {
+  return (
+    <View style={styles.stepContainer}>
+      <Text style={styles.bigEmoji}>{PERSONAS[selected].emoji}</Text>
+      <Text style={styles.stepTitle}>{t.onboardingPersonaTitle}</Text>
+      <Text style={styles.stepSubtitle}>{t.onboardingPersonaSubtitle}</Text>
+      {PERSONA_ORDER.map((id) => {
+        const p = PERSONAS[id];
+        const active = selected === id;
+        return (
+          <TouchableOpacity
+            key={id}
+            style={[styles.personaOption, active && { borderColor: p.accent, backgroundColor: `${p.accent}18` }]}
+            onPress={() => onSelect(id)}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.personaAvatar, { backgroundColor: `${p.accent}22` }]}>
+              <Text style={styles.personaEmoji}>{p.emoji}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.personaName, active && { color: p.accent }]}>
+                {p.name} · {t[p.nameKey]}
+              </Text>
+              <Text style={styles.personaTagline}>{t[p.taglineKey]}</Text>
+            </View>
+            {active && <Text style={[styles.checkmark, { color: p.accent }]}>✓</Text>}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 function StepBaseline({
-  t,
-  dailyCount, setDailyCount,
-  costPerPack, setCostPerPack,
-  cigsPerPack, setCigsPerPack,
-  currency, setCurrency,
+  t, dailyCount, setDailyCount, costPerPack, setCostPerPack,
+  cigsPerPack, setCigsPerPack, currency, setCurrency,
 }: {
   t: typeof translations.en;
   dailyCount: string; setDailyCount: (v: string) => void;
@@ -302,13 +300,7 @@ function LabeledInput({ label, value, onChangeText, keyboardType = 'default', pl
   );
 }
 
-function StepGoal({
-  t,
-  motivations,
-  onToggleMotivation,
-  goal,
-  onSelectGoal,
-}: {
+function StepGoal({ t, motivations, onToggleMotivation, goal, onSelectGoal }: {
   t: typeof translations.en;
   motivations: Motivation[];
   onToggleMotivation: (m: Motivation) => void;
@@ -340,16 +332,12 @@ function StepGoal({
             style={[styles.chip, motivations.includes(m.key) && styles.chipSelected]}
             onPress={() => onToggleMotivation(m.key)}
           >
-            <Text style={[styles.chipText, motivations.includes(m.key) && styles.chipTextSelected]}>
-              {m.label}
-            </Text>
+            <Text style={[styles.chipText, motivations.includes(m.key) && styles.chipTextSelected]}>{m.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={[styles.stepTitle, { marginTop: Spacing.xl, fontSize: FontSize.lg }]}>
-        {t.onboardingGoalTitle}
-      </Text>
+      <Text style={[styles.stepTitle, { marginTop: Spacing.xl, fontSize: FontSize.lg }]}>{t.onboardingGoalTitle}</Text>
       <Text style={styles.stepSubtitle}>{t.onboardingGoalSubtitle}</Text>
 
       {goals.map((g) => (
@@ -359,9 +347,7 @@ function StepGoal({
           onPress={() => onSelectGoal(g.key)}
         >
           <View style={{ flex: 1 }}>
-            <Text style={[styles.goalLabel, goal === g.key && styles.goalLabelSelected]}>
-              {g.label}
-            </Text>
+            <Text style={[styles.goalLabel, goal === g.key && styles.goalLabelSelected]}>{g.label}</Text>
             <Text style={styles.goalDesc}>{g.desc}</Text>
           </View>
           {goal === g.key && (
@@ -377,121 +363,54 @@ function StepGoal({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bgDark },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  dot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: Colors.textDarkMuted,
-  },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.textDarkMuted },
   dotActive: { backgroundColor: Colors.primary, width: 20 },
   content: { flex: 1 },
   scroll: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
   stepContainer: { paddingTop: Spacing.xl },
   bigEmoji: { fontSize: 56, textAlign: 'center', marginBottom: Spacing.lg },
-  stepTitle: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.xxl,
-    color: Colors.textDark,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-    lineHeight: FontSize.xxl * 1.3,
-  },
-  stepSubtitle: {
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.base,
-    color: Colors.textDarkSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.xl,
-    lineHeight: FontSize.base * 1.6,
-  },
-  actions: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-    paddingTop: Spacing.md,
-    gap: Spacing.sm,
-  },
+  stepTitle: { fontFamily: FontFamily.bold, fontSize: FontSize.xxl, color: Colors.textDark, textAlign: 'center', marginBottom: Spacing.sm, lineHeight: FontSize.xxl * 1.3 },
+  stepSubtitle: { fontFamily: FontFamily.regular, fontSize: FontSize.base, color: Colors.textDarkSecondary, textAlign: 'center', marginBottom: Spacing.xl, lineHeight: FontSize.base * 1.6 },
+  actions: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl, paddingTop: Spacing.md, gap: Spacing.sm },
   nextBtn: { width: '100%' },
   backBtn: { alignSelf: 'center' },
   backText: { fontFamily: FontFamily.medium, color: Colors.textDarkSecondary, fontSize: FontSize.base },
   skipBtn: { alignSelf: 'center', paddingVertical: Spacing.xs },
   skipText: { fontFamily: FontFamily.regular, color: Colors.textDarkMuted, fontSize: FontSize.sm },
 
-  // Feature list
   featureList: { gap: Spacing.md, marginTop: Spacing.md },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   featureIcon: { fontSize: 22, width: 32, textAlign: 'center' },
   featureText: { fontFamily: FontFamily.regular, color: Colors.textDark, fontSize: FontSize.base, flex: 1 },
 
-  // Language options
-  langOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1.5,
-    borderColor: Colors.bgDarkElevated,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.bgDarkCard,
-  },
+  langOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: Colors.bgDarkElevated, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.sm, backgroundColor: Colors.bgDarkCard },
   langOptionSelected: { borderColor: Colors.primary, backgroundColor: `${Colors.primary}18` },
   langLabel: { fontFamily: FontFamily.medium, fontSize: FontSize.md, color: Colors.textDark },
   langLabelSelected: { color: Colors.primary },
   checkmark: { color: Colors.primary, fontFamily: FontFamily.bold, fontSize: FontSize.md },
 
-  // Baseline inputs
+  personaOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderWidth: 1.5, borderColor: Colors.bgDarkElevated, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.sm, backgroundColor: Colors.bgDarkCard },
+  personaAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  personaEmoji: { fontSize: 24 },
+  personaName: { fontFamily: FontFamily.semiBold, fontSize: FontSize.base, color: Colors.textDark, marginBottom: 2 },
+  personaTagline: { fontFamily: FontFamily.regular, fontSize: FontSize.sm, color: Colors.textDarkSecondary, lineHeight: FontSize.sm * 1.45 },
+
   row: { flexDirection: 'row' },
   inputGroup: { marginBottom: Spacing.md },
   inputLabel: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.textDarkSecondary, marginBottom: Spacing.xs },
-  input: {
-    backgroundColor: Colors.bgDarkCard,
-    borderWidth: 1.5,
-    borderColor: Colors.bgDarkElevated,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    color: Colors.textDark,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.base,
-  },
+  input: { backgroundColor: Colors.bgDarkCard, borderWidth: 1.5, borderColor: Colors.bgDarkElevated, borderRadius: Radius.md, padding: Spacing.md, color: Colors.textDark, fontFamily: FontFamily.regular, fontSize: FontSize.base },
 
-  // Motivation chips
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  chip: {
-    borderWidth: 1.5,
-    borderColor: Colors.bgDarkElevated,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    backgroundColor: Colors.bgDarkCard,
-  },
+  chip: { borderWidth: 1.5, borderColor: Colors.bgDarkElevated, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs + 2, backgroundColor: Colors.bgDarkCard },
   chipSelected: { borderColor: Colors.primary, backgroundColor: `${Colors.primary}22` },
   chipText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.textDarkSecondary },
   chipTextSelected: { color: Colors.primary },
 
-  // Goal options
-  goalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.bgDarkElevated,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.bgDarkCard,
-  },
+  goalOption: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.bgDarkElevated, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.sm, backgroundColor: Colors.bgDarkCard },
   goalOptionSelected: { borderColor: Colors.primary, backgroundColor: `${Colors.primary}18` },
   goalLabel: { fontFamily: FontFamily.semiBold, fontSize: FontSize.base, color: Colors.textDark, marginBottom: 2 },
   goalLabelSelected: { color: Colors.primary },
   goalDesc: { fontFamily: FontFamily.regular, fontSize: FontSize.sm, color: Colors.textDarkSecondary, lineHeight: FontSize.sm * 1.5 },
-  goalCheck: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-    marginLeft: Spacing.sm,
-  },
+  goalCheck: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginLeft: Spacing.sm },
 });

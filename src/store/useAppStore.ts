@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Locale } from '../constants/translations';
+import { PersonaId } from '../constants/personas';
 import { syncProfileToSupabase, syncLogToSupabase, syncSessionToSupabase, syncAchievementToSupabase } from '../lib/sync';
 
 export type GoalType = 'quit' | 'reduce' | 'track';
@@ -20,6 +21,7 @@ export interface UserProfile {
   currency: string;
   goalType: GoalType;
   motivations: Motivation[];
+  companionPersona: PersonaId;
   startDate: string; // ISO string
   themeMode: ThemeMode;
   notificationsEnabled: boolean;
@@ -75,6 +77,7 @@ interface AppState {
   addChatMessage: (msg: ChatMessage) => void;
   clearChatHistory: () => void;
   unlockAchievement: (id: string) => void;
+  checkAchievements: () => void;
   resetAll: () => void;
   loadFromStorage: () => Promise<void>;
   saveToStorage: () => Promise<void>;
@@ -89,6 +92,7 @@ const defaultProfile: UserProfile = {
   currency: '₹',
   goalType: 'reduce',
   motivations: [],
+  companionPersona: 'guide',
   startDate: new Date().toISOString(),
   themeMode: 'dark',
   notificationsEnabled: true,

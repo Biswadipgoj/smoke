@@ -13,7 +13,9 @@ import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
 import { GlassCard } from '../../src/components/ui/GlassCard';
+import { LivingBackground } from '../../src/components/ui/LivingBackground';
 import { TranslationKeys } from '../../src/constants/translations';
+import { cigsAvoided, cleanBreathingMinutes, lifeMinutesRegained, humanizeMinutes } from '../../src/lib/narrative';
 
 type MilestoneId = keyof Pick<TranslationKeys,
   'milestone20min' | 'milestone12hr' | 'milestone24hr' | 'milestone48hr' |
@@ -55,7 +57,7 @@ function formatIntervalStr(min: number): string {
 
 export default function ProgressScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { isDark, colors } = useTheme();
   const profile = useAppStore((s) => s.profile);
   const logs = useAppStore((s) => s.logs);
   const delaySessions = useAppStore((s) => s.delaySessions);
@@ -93,12 +95,40 @@ export default function ProgressScreen() {
   logs.forEach((l) => { if (l.contextTag) tagCounts[l.contextTag] = (tagCounts[l.contextTag] ?? 0) + 1; });
   const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
+  // Narrative figures
+  const avoided = profile ? cigsAvoided(profile.dailyBaseline, profile.startDate, cigsTotal) : 0;
+  const cleanMin = cleanBreathingMinutes(avoided);
+  const lifeMin = lifeMinutesRegained(avoided);
+
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
+      {isDark && <LivingBackground subdued />}
       <Animated.ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.Text entering={FadeIn.duration(300)} style={[styles.pageTitle, { color: colors.text }]}>
           {t.progressTitle}
         </Animated.Text>
+
+        {/* Narrative hero — data as story */}
+        <Animated.View entering={FadeInDown.duration(500).delay(50)}>
+          <GlassCard style={styles.narrativeCard} elevated>
+            <View style={styles.narrativeRow}>
+              <View style={styles.narrativeItem}>
+                <Text style={[styles.narrativeValue, { color: Colors.primary }]}>{avoided}</Text>
+                <Text style={[styles.narrativeLabel, { color: colors.textSecondary }]}>{t.homeAvoidedCaption}</Text>
+              </View>
+              <View style={[styles.narrativeDivider, { backgroundColor: colors.glassBorder }]} />
+              <View style={styles.narrativeItem}>
+                <Text style={[styles.narrativeValue, { color: Colors.sky }]}>{humanizeMinutes(cleanMin)}{cleanMin < 60 ? ` ${t.unitMin}` : ''}</Text>
+                <Text style={[styles.narrativeLabel, { color: colors.textSecondary }]}>{t.homeCleanAirCaption}</Text>
+              </View>
+              <View style={[styles.narrativeDivider, { backgroundColor: colors.glassBorder }]} />
+              <View style={styles.narrativeItem}>
+                <Text style={[styles.narrativeValue, { color: Colors.rose }]}>{humanizeMinutes(lifeMin)}{lifeMin < 60 ? ` ${t.unitMin}` : ''}</Text>
+                <Text style={[styles.narrativeLabel, { color: colors.textSecondary }]}>{t.homeLifeCaption}</Text>
+              </View>
+            </View>
+          </GlassCard>
+        </Animated.View>
 
         {/* Money Saved */}
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
@@ -227,6 +257,13 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg },
   pageTitle: { fontFamily: FontFamily.bold, fontSize: FontSize.xxl, marginBottom: Spacing.lg },
   sectionTitle: { fontFamily: FontFamily.semiBold, fontSize: FontSize.md, marginBottom: Spacing.md, marginTop: Spacing.lg },
+
+  narrativeCard: { marginBottom: Spacing.xs },
+  narrativeRow: { flexDirection: 'row', alignItems: 'center' },
+  narrativeItem: { flex: 1, alignItems: 'center', paddingHorizontal: 2 },
+  narrativeValue: { fontFamily: FontFamily.bold, fontSize: FontSize.lg },
+  narrativeLabel: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, textAlign: 'center', marginTop: 4, lineHeight: FontSize.xs * 1.35 },
+  narrativeDivider: { width: 1, height: 44, marginHorizontal: Spacing.xs },
 
   moneyCard: { marginBottom: Spacing.md },
   moneyRow: { flexDirection: 'row', alignItems: 'center' },

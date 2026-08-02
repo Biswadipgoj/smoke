@@ -1,21 +1,36 @@
-// app/(tabs)/index.tsx — Home / Today screen (v3: Reanimated, Robust Intervals)
+// app/(tabs)/index.tsx — The Living Home
+// A screen that breathes with the time of day, speaks in your companion's voice,
+// and tells your progress back to you as a story rather than a spreadsheet.
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, Layout, SlideInUp, ZoomIn, FadeOut } from 'react-native-reanimated';
-import { useAppStore, computeMoneySaved, computeCurrentStreak, computeLongestStreak, SmokingLog } from '../../src/store/useAppStore';
+import {
+  useAppStore,
+  computeMoneySaved,
+  computeCurrentStreak,
+  computeLongestStreak,
+} from '../../src/store/useAppStore';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
-import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
+import { Colors, FontFamily, FontSize, Spacing, Radius, getAtmosphere, getDayPhase } from '../../src/constants/theme';
 import { GlassCard } from '../../src/components/ui/GlassCard';
+import { LivingBackground } from '../../src/components/ui/LivingBackground';
+import { getPersona } from '../../src/constants/personas';
+import {
+  cigsAvoided,
+  cleanBreathingMinutes,
+  lifeMinutesRegained,
+  moneyStory,
+  humanizeMinutes,
+} from '../../src/lib/narrative';
 
 // ── Live timer helper ─────────────────────────────────────────────────
 function useLiveTimer(lastCigTime: Date | null) {
@@ -35,30 +50,40 @@ function useLiveTimer(lastCigTime: Date | null) {
   };
 }
 
-// ── Encouragement messages (context-aware) ────────────────────────────
-function getEncouragement(cigsToday: number, baseline: number, streak: number, minutesSinceLast: number): { emoji: string; message: string } {
-  if (cigsToday === 0) return { emoji: '🌟', message: "Zero today — you're shining! Every smoke-free hour is healing your body." };
+// ── Companion voice: a warm, context-aware nudge ───────────────────────
+function getCompanionNudge(cigsToday: number, baseline: number, streak: number, minutesSinceLast: number): { emoji: string; message: string } {
+  if (cigsToday === 0) return { emoji: '🌟', message: "Zero today — you're shining. Every smoke-free hour is your body quietly healing." };
   if (minutesSinceLast > 180) return { emoji: '💪', message: `${Math.floor(minutesSinceLast / 60)} hours since your last one. Your lungs are thanking you right now.` };
-  if (minutesSinceLast > 60) return { emoji: '🌿', message: `Over an hour smoke-free. That's real strength. Keep going.` };
-  if (cigsToday < baseline / 2) return { emoji: '🎯', message: `Only ${cigsToday} today — that's less than half your baseline. Incredible progress!` };
-  if (cigsToday < baseline) return { emoji: '📉', message: `${baseline - cigsToday} fewer than your baseline today. Every reduction counts.` };
-  if (streak > 0) return { emoji: '🔥', message: `${streak}-day streak of reducing! You're building a powerful new pattern.` };
-  return { emoji: '💙', message: "You're here, you're tracking, and that's brave. Small steps lead to big change." };
+  if (minutesSinceLast > 60) return { emoji: '🌿', message: `Over an hour smoke-free. That's real strength — let's stretch it a little further.` };
+  if (cigsToday < baseline / 2) return { emoji: '🎯', message: `Only ${cigsToday} today — less than half your baseline. That's genuinely remarkable progress.` };
+  if (cigsToday < baseline) return { emoji: '📉', message: `${baseline - cigsToday} fewer than your baseline today. Every one you skip counts.` };
+  if (streak > 0) return { emoji: '🔥', message: `${streak}-day streak of reducing. You're building a whole new pattern, one choice at a time.` };
+  return { emoji: '💙', message: "You're here, you're honest, and that's brave. Small steps, gently, lead somewhere real." };
 }
 
-function formatInterval(min: number): string {
-  if (min < 60) return `${Math.round(min)}m`;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
-
-function getGreeting(t: any) {
-  const h = new Date().getHours();
-  if (h < 12) return t.homeGreetingMorning;
-  if (h < 17) return t.homeGreetingAfternoon;
-  if (h < 21) return t.homeGreetingEvening;
+function greetingForPhase(t: any): string {
+  const phase = getDayPhase();
+  if (phase === 'dawn' || phase === 'morning') return t.homeGreetingMorning;
+  if (phase === 'afternoon') return t.homeGreetingAfternoon;
+  if (phase === 'evening') return t.homeGreetingEvening;
   return t.homeGreetingNight;
+}
+
+// A compact narrative stat tile.
+function StoryTile({ value, unit, title, caption, accent }: {
+  value: string; unit?: string; title: string; caption: string; accent: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <GlassCard style={styles.storyTile}>
+      <Text style={styles.storyTitle} numberOfLines={1}>{title}</Text>
+      <View style={styles.storyValueRow}>
+        <Text style={[styles.storyValue, { color: accent }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+        {unit ? <Text style={[styles.storyUnit, { color: accent }]}>{unit}</Text> : null}
+      </View>
+      <Text style={[styles.storyCaption, { color: colors.textMuted }]}>{caption}</Text>
+    </GlassCard>
+  );
 }
 
 export default function HomeScreen() {
@@ -70,11 +95,14 @@ export default function HomeScreen() {
 
   const [showQuickLogConfirm, setShowQuickLogConfirm] = useState(false);
 
+  const atmosphere = getAtmosphere();
+  const persona = getPersona(profile?.companionPersona);
+
   if (!profile) return null;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayCigs = logs.filter(l => {
+  const todayCigs = logs.filter((l) => {
     if (l.type !== 'cigarette') return false;
     const d = new Date(l.timestamp); d.setHours(0, 0, 0, 0);
     return d.getTime() === today.getTime();
@@ -82,7 +110,7 @@ export default function HomeScreen() {
   const cigsToday = todayCigs.length;
 
   const lastCig = useMemo(() => {
-    const cigs = logs.filter(l => l.type === 'cigarette').sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const cigs = logs.filter((l) => l.type === 'cigarette').sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return cigs[0] ? new Date(cigs[0].timestamp) : null;
   }, [logs]);
 
@@ -92,32 +120,17 @@ export default function HomeScreen() {
   const longestStreak = computeLongestStreak(logs);
   const baseline = profile.dailyBaseline;
   const progressFraction = Math.min(1, Math.max(0, 1 - cigsToday / baseline));
-  const encouragement = getEncouragement(cigsToday, baseline, currentStreak, timer.totalMinutes);
+  const nudge = getCompanionNudge(cigsToday, baseline, currentStreak, timer.totalMinutes);
 
-  // Today's per-cig intervals (robust calculation)
-  const todayIntervals = useMemo(() => {
-    const cigs = todayCigs
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    return cigs.map((c, i) => ({
-      id: c.id,
-      time: new Date(c.timestamp),
-      intervalMin: i === 0 ? null : (new Date(c.timestamp).getTime() - new Date(cigs[i - 1].timestamp).getTime()) / 60000,
-    }));
-  }, [todayCigs]);
+  // Narrative figures
+  const cigsTotal = logs.filter((l) => l.type === 'cigarette').length;
+  const avoided = cigsAvoided(baseline, profile.startDate, cigsTotal);
+  const cleanMin = cleanBreathingMinutes(avoided);
+  const lifeMin = lifeMinutesRegained(avoided);
+  const story = moneyStory(money.total, profile.costPerPack, t);
 
-  const avgInterval = useMemo(() => {
-    const intervals = todayIntervals.filter(i => i.intervalMin !== null).map(i => i.intervalMin!);
-    if (intervals.length === 0) return null;
-    return intervals.reduce((a, b) => a + b, 0) / intervals.length;
-  }, [todayIntervals]);
-
-  // ── Quick log (one-tap) ──
   const handleQuickLog = () => {
-    addLog({
-      id: `cig_${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      type: 'cigarette',
-    });
+    addLog({ id: `cig_${Date.now()}`, timestamp: new Date().toISOString(), type: 'cigarette' });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowQuickLogConfirm(true);
     setTimeout(() => setShowQuickLogConfirm(false), 2000);
@@ -125,44 +138,40 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
-      <Animated.ScrollView 
-        contentContainerStyle={styles.scroll} 
-        showsVerticalScrollIndicator={false}
-      >
+      {isDark && <LivingBackground atmosphere={atmosphere} />}
+      <Animated.ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.textSecondary }]}>{getGreeting(t)} 👋</Text>
-          <Text style={[styles.appName, { color: colors.text }]}>{t.appName}</Text>
+          <Text style={[styles.greeting, { color: colors.textSecondary }]}>{greetingForPhase(t)}</Text>
+          <View style={styles.companionLine}>
+            <Text style={styles.companionEmoji}>{persona.emoji}</Text>
+            <Text style={[styles.companionText, { color: colors.textMuted }]}>
+              {t.companionWord} · {persona.name}
+            </Text>
+          </View>
         </Animated.View>
 
-        {/* ── ENCOURAGEMENT CARD ── */}
+        {/* Companion nudge */}
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-          <GlassCard style={[styles.encourageCard, { borderColor: `${Colors.primary}55` }]} elevated>
-            <Text style={styles.encourageEmoji}>{encouragement.emoji}</Text>
-            <Text style={[styles.encourageText, { color: colors.text }]}>{encouragement.message}</Text>
+          <GlassCard style={[styles.nudgeCard, { borderColor: `${persona.accent}55` }]} elevated>
+            <View style={[styles.nudgeAvatar, { backgroundColor: `${persona.accent}22` }]}>
+              <Text style={styles.nudgeEmoji}>{nudge.emoji}</Text>
+            </View>
+            <Text style={[styles.nudgeText, { color: colors.text }]}>{nudge.message}</Text>
           </GlassCard>
         </Animated.View>
 
-        {/* ── LIVE TIMER ── */}
+        {/* Live timer */}
         {lastCig && (
           <Animated.View entering={FadeInDown.duration(500).delay(200)}>
             <GlassCard style={styles.timerCard}>
               <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>Time since last cigarette</Text>
               <View style={styles.timerRow}>
-                <View style={styles.timerUnit}>
-                  <Text style={styles.timerDigit}>{String(timer.hours).padStart(2, '0')}</Text>
-                  <Text style={[styles.timerUnitLabel, { color: colors.textMuted }]}>hrs</Text>
-                </View>
+                <TimerUnit value={timer.hours} label="hrs" muted={colors.textMuted} />
                 <Text style={styles.timerColon}>:</Text>
-                <View style={styles.timerUnit}>
-                  <Text style={styles.timerDigit}>{String(timer.minutes).padStart(2, '0')}</Text>
-                  <Text style={[styles.timerUnitLabel, { color: colors.textMuted }]}>min</Text>
-                </View>
+                <TimerUnit value={timer.minutes} label="min" muted={colors.textMuted} />
                 <Text style={styles.timerColon}>:</Text>
-                <View style={styles.timerUnit}>
-                  <Text style={styles.timerDigit}>{String(timer.seconds).padStart(2, '0')}</Text>
-                  <Text style={[styles.timerUnitLabel, { color: colors.textMuted }]}>sec</Text>
-                </View>
+                <TimerUnit value={timer.seconds} label="sec" muted={colors.textMuted} />
               </View>
               {timer.totalMinutes > 20 && (
                 <Text style={styles.timerMilestone}>
@@ -175,7 +184,7 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
-        {/* ── TODAY CARD ── */}
+        {/* Today */}
         <Animated.View entering={FadeInDown.duration(500).delay(300)}>
           <GlassCard style={styles.todayCard} elevated>
             <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>{t.homeTodayCount}</Text>
@@ -184,10 +193,7 @@ export default function HomeScreen() {
               <Text style={[styles.baselineText, { color: colors.textMuted }]}>/ {baseline} {t.homeBaselineCount}</Text>
             </View>
             <View style={[styles.progressTrack, { backgroundColor: isDark ? Colors.bgDarkElevated : '#E5F5F3' }]}>
-              <Animated.View 
-                style={[styles.progressFill, { width: `${Math.round(progressFraction * 100)}%` as any }]} 
-                layout={Layout.springify().damping(15)}
-              />
+              <Animated.View style={[styles.progressFill, { width: `${Math.round(progressFraction * 100)}%` as any }]} layout={Layout.springify().damping(15)} />
             </View>
             {progressFraction > 0 && (
               <Text style={styles.reductionText}>{Math.round(progressFraction * 100)}% below baseline ✨</Text>
@@ -195,29 +201,75 @@ export default function HomeScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ── QUICK ACTIONS ROW ── */}
-        <Animated.View entering={FadeInDown.duration(500).delay(400)} style={styles.quickRow}>
-          {/* Quick Log */}
+        {/* ── YOUR STORY SO FAR ── */}
+        <Animated.View entering={FadeInDown.duration(500).delay(400)}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.homeStorySectionTitle}</Text>
+          <View style={styles.storyRow}>
+            <StoryTile
+              value={humanizeMinutes(cleanMin)}
+              unit={cleanMin < 60 ? t.unitMin : undefined}
+              title={t.homeCleanAirTitle}
+              caption={t.homeCleanAirCaption}
+              accent={Colors.sky}
+            />
+            <View style={{ width: Spacing.sm }} />
+            <StoryTile
+              value={String(avoided)}
+              title={t.homeAvoidedTitle}
+              caption={t.homeAvoidedCaption}
+              accent={Colors.primary}
+            />
+          </View>
+          <View style={[styles.storyRow, { marginTop: Spacing.sm }]}>
+            <StoryTile
+              value={humanizeMinutes(lifeMin)}
+              unit={lifeMin < 60 ? t.unitMin : undefined}
+              title={t.homeLifeTitle}
+              caption={t.homeLifeCaption}
+              accent={Colors.rose}
+            />
+            <View style={{ width: Spacing.sm }} />
+            <StoryTile
+              value={`${profile.currency}${money.total.toFixed(0)}`}
+              title={t.homeMoneySaved}
+              caption={`${t.homeMoneyPrefix} ${story}`}
+              accent={Colors.gold}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Streak strip */}
+        <Animated.View entering={FadeInDown.duration(500).delay(500)}>
+          <GlassCard style={styles.streakStrip}>
+            <Text style={styles.streakFire}>🔥</Text>
+            <Text style={[styles.streakText, { color: colors.text }]}>
+              <Text style={{ color: Colors.primary, fontFamily: FontFamily.bold }}>{currentStreak}</Text>
+              {` ${t.homeStreakDays} · `}
+              <Text style={{ color: colors.textSecondary }}>{t.homeStreakBest} {longestStreak}</Text>
+            </Text>
+          </GlassCard>
+        </Animated.View>
+
+        {/* Quick actions */}
+        <Animated.View entering={FadeInDown.duration(500).delay(600)} style={styles.quickRow}>
           <TouchableOpacity
-            style={[styles.quickAction, { flex: 1, marginRight: Spacing.sm, backgroundColor: `${Colors.amber}18`, borderColor: `${Colors.amber}44` }]}
+            style={[styles.quickAction, { marginRight: Spacing.sm, backgroundColor: `${Colors.amber}18`, borderColor: `${Colors.amber}44` }]}
             onPress={handleQuickLog}
             activeOpacity={0.7}
           >
             <Text style={styles.quickActionEmoji}>🚬</Text>
             <Text style={[styles.quickActionLabel, { color: Colors.amber }]}>Quick Log</Text>
           </TouchableOpacity>
-          {/* Detailed Log */}
           <TouchableOpacity
-            style={[styles.quickAction, { flex: 1, marginHorizontal: Spacing.xs, borderColor: colors.glassBorder }]}
+            style={[styles.quickAction, { marginHorizontal: Spacing.xs, borderColor: colors.glassBorder }]}
             onPress={() => router.push('/log')}
             activeOpacity={0.7}
           >
             <Text style={styles.quickActionEmoji}>📝</Text>
             <Text style={[styles.quickActionLabel, { color: colors.textSecondary }]}>+ Details</Text>
           </TouchableOpacity>
-          {/* Resisted */}
           <TouchableOpacity
-            style={[styles.quickAction, { flex: 1, marginLeft: Spacing.sm, borderColor: `${Colors.primary}44` }]}
+            style={[styles.quickAction, { marginLeft: Spacing.sm, borderColor: `${Colors.primary}44` }]}
             onPress={() => {
               addLog({ id: `crv_${Date.now()}`, timestamp: new Date().toISOString(), type: 'craving' });
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -235,73 +287,13 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
-        {/* ── STATS ROW ── */}
-        <Animated.View entering={FadeInDown.duration(500).delay(500)} style={styles.statsRow}>
-          <GlassCard style={[styles.statCard, { flex: 1, marginRight: Spacing.sm }]}>
-            <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>{t.homeMoneySaved}</Text>
-            <Text style={styles.moneyAmount}>{profile.currency}{money.total.toFixed(0)}</Text>
-            <Text style={[styles.moneySubtext, { color: colors.textMuted }]}>{profile.currency}{money.today.toFixed(0)} {t.homeMoneyToday}</Text>
-          </GlassCard>
-          <GlassCard style={[styles.statCard, { flex: 1, marginLeft: Spacing.sm }]}>
-            <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>{t.homeStreakCurrent}</Text>
-            <Text style={styles.streakNumber}>{currentStreak}</Text>
-            <Text style={[styles.moneySubtext, { color: colors.textMuted }]}>{t.homeStreakDays} · Best: {longestStreak}</Text>
-          </GlassCard>
-        </Animated.View>
-
-        {/* ── ROBUST PER-CIG INTERVALS (today's timeline) ── */}
-        {todayIntervals.length > 0 && (
-          <Animated.View entering={FadeInDown.duration(500).delay(600)}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Intervals</Text>
-            <GlassCard style={styles.timelineCard}>
-              {todayIntervals.map((entry, i) => (
-                <Animated.View key={entry.id} entering={SlideInUp.springify().delay(i * 100)} layout={Layout.springify()} style={styles.timelineEntry}>
-                  <View style={styles.timelineDotCol}>
-                    <View style={[styles.tlDot, i === todayIntervals.length - 1 && styles.tlDotLatest]} />
-                    {i < todayIntervals.length - 1 && <View style={styles.tlLine} />}
-                  </View>
-                  <View style={styles.timelineInfo}>
-                    <Text style={[styles.tlTime, { color: colors.text }]}>
-                      {entry.time.getHours()}:{String(entry.time.getMinutes()).padStart(2, '0')}
-                    </Text>
-                    {entry.intervalMin !== null ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Text style={[styles.tlInterval, { color: entry.intervalMin > (avgInterval ?? 60) ? Colors.primary : colors.textMuted }]}>
-                          {formatInterval(entry.intervalMin)} gap
-                        </Text>
-                        {entry.intervalMin > (avgInterval ?? 60) && (
-                          <Text style={{ fontSize: 12 }}>📈</Text>
-                        )}
-                        {entry.intervalMin < (avgInterval ?? 60) && (
-                          <Text style={{ fontSize: 12 }}>📉</Text>
-                        )}
-                      </View>
-                    ) : (
-                      <Text style={[styles.tlInterval, { color: colors.textMuted }]}>First today</Text>
-                    )}
-                  </View>
-                </Animated.View>
-              ))}
-              {avgInterval !== null && (
-                <View style={styles.avgRow}>
-                  <Text style={[styles.avgLabel, { color: colors.textSecondary }]}>Average interval today: </Text>
-                  <Text style={[styles.avgValue, { color: Colors.primary }]}>{formatInterval(avgInterval)}</Text>
-                </View>
-              )}
-            </GlassCard>
-          </Animated.View>
-        )}
-
-        <View style={{ height: 120 }} />
+        <View style={{ height: 130 }} />
       </Animated.ScrollView>
 
-      {/* FAB — I'm craving */}
-      <Animated.View 
-        entering={SlideInUp.springify().damping(12).delay(800)}
-        style={styles.fabContainer}
-      >
+      {/* FAB — Ride the wave (intervention hub) */}
+      <Animated.View entering={SlideInUp.springify().damping(12).delay(800)} style={styles.fabContainer}>
         <TouchableOpacity style={styles.fab} onPress={() => router.push('/delay')} activeOpacity={0.85}>
-          <Text style={styles.fabIcon}>🫁</Text>
+          <Text style={styles.fabIcon}>🌊</Text>
           <Text style={styles.fabText}>{t.homeCravingBtn}</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -309,17 +301,29 @@ export default function HomeScreen() {
   );
 }
 
+function TimerUnit({ value, label, muted }: { value: number; label: string; muted: string }) {
+  return (
+    <View style={styles.timerUnit}>
+      <Text style={styles.timerDigit}>{String(value).padStart(2, '0')}</Text>
+      <Text style={[styles.timerUnitLabel, { color: muted }]}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg },
   header: { marginBottom: Spacing.md },
-  greeting: { fontFamily: FontFamily.regular, fontSize: FontSize.base, marginBottom: 4 },
-  appName: { fontFamily: FontFamily.bold, fontSize: FontSize.xxl, letterSpacing: -0.5 },
+  greeting: { fontFamily: FontFamily.bold, fontSize: FontSize.xxl, letterSpacing: -0.5, marginBottom: 4 },
+  companionLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  companionEmoji: { fontSize: 14 },
+  companionText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, textTransform: 'capitalize' },
 
-  // Encouragement
-  encourageCard: { marginBottom: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderWidth: 1.5 },
-  encourageEmoji: { fontSize: 28 },
-  encourageText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, lineHeight: FontSize.base * 1.55, flex: 1 },
+  // Companion nudge
+  nudgeCard: { marginBottom: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderWidth: 1.5 },
+  nudgeAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  nudgeEmoji: { fontSize: 24 },
+  nudgeText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, lineHeight: FontSize.base * 1.5, flex: 1 },
 
   // Timer
   timerCard: { marginBottom: Spacing.md, alignItems: 'center' },
@@ -341,40 +345,28 @@ const styles = StyleSheet.create({
   progressFill: { height: 6, borderRadius: 3, backgroundColor: Colors.primary },
   reductionText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.primaryLight },
 
+  // Story
+  sectionTitle: { fontFamily: FontFamily.semiBold, fontSize: FontSize.md, marginBottom: Spacing.sm, marginTop: Spacing.xs },
+  storyRow: { flexDirection: 'row' },
+  storyTile: { flex: 1 },
+  storyTitle: { fontFamily: FontFamily.medium, fontSize: FontSize.xs, color: Colors.textDarkSecondary },
+  storyValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6, marginBottom: 4 },
+  storyValue: { fontFamily: FontFamily.bold, fontSize: FontSize.xl },
+  storyUnit: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
+  storyCaption: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, lineHeight: FontSize.xs * 1.4 },
+
+  // Streak
+  streakStrip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md, marginBottom: Spacing.md },
+  streakFire: { fontSize: 20 },
+  streakText: { fontFamily: FontFamily.medium, fontSize: FontSize.base },
+
   // Quick actions
-  quickRow: { flexDirection: 'row', marginBottom: Spacing.md },
-  quickAction: {
-    borderWidth: 1.5, borderRadius: Radius.lg, alignItems: 'center', paddingVertical: Spacing.md, gap: 4,
-  },
+  quickRow: { flexDirection: 'row' },
+  quickAction: { flex: 1, borderWidth: 1.5, borderRadius: Radius.lg, alignItems: 'center', paddingVertical: Spacing.md, gap: 4 },
   quickActionEmoji: { fontSize: 22 },
   quickActionLabel: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xs },
-  quickToast: {
-    backgroundColor: `${Colors.primary}22`, borderRadius: Radius.md, padding: Spacing.sm,
-    marginBottom: Spacing.md, alignItems: 'center',
-  },
+  quickToast: { backgroundColor: `${Colors.primary}22`, borderRadius: Radius.md, padding: Spacing.sm, marginTop: Spacing.md, alignItems: 'center' },
   quickToastText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.primary },
-
-  // Stats
-  statsRow: { flexDirection: 'row', marginBottom: Spacing.md },
-  statCard: {},
-  moneyAmount: { fontFamily: FontFamily.bold, fontSize: FontSize.xl, color: Colors.gold, marginTop: 4, marginBottom: 2 },
-  moneySubtext: { fontFamily: FontFamily.regular, fontSize: FontSize.xs },
-  streakNumber: { fontFamily: FontFamily.bold, fontSize: FontSize.xl, color: Colors.primary, marginTop: 4, marginBottom: 2 },
-
-  // Timeline
-  sectionTitle: { fontFamily: FontFamily.semiBold, fontSize: FontSize.md, marginBottom: Spacing.sm },
-  timelineCard: { marginBottom: Spacing.md },
-  timelineEntry: { flexDirection: 'row', gap: Spacing.sm, marginBottom: 2 },
-  timelineDotCol: { alignItems: 'center', width: 16 },
-  tlDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.bgDarkElevated, marginTop: 4 },
-  tlDotLatest: { backgroundColor: Colors.primary, shadowColor: Colors.primary, shadowOpacity: 0.5, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
-  tlLine: { width: 2, flex: 1, backgroundColor: Colors.bgDarkElevated, marginVertical: 2 },
-  timelineInfo: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: Spacing.sm },
-  tlTime: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
-  tlInterval: { fontFamily: FontFamily.semiBold, fontSize: FontSize.sm },
-  avgRow: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.bgDarkElevated },
-  avgLabel: { fontFamily: FontFamily.regular, fontSize: FontSize.sm },
-  avgValue: { fontFamily: FontFamily.bold, fontSize: FontSize.sm },
 
   // FAB
   fabContainer: { position: 'absolute', bottom: 90, left: Spacing.lg, right: Spacing.lg, alignItems: 'center' },

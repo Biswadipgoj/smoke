@@ -220,6 +220,68 @@ export type TranslationKeys = {
   errorNetwork: string;
   errorAuth: string;
   errorSync: string;
+
+  // Companion / personas
+  companionWord: string;
+  personaMentor: string;
+  personaMentorTagline: string;
+  personaFriend: string;
+  personaFriendTagline: string;
+  personaGuide: string;
+  personaGuideTagline: string;
+  onboardingPersonaTitle: string;
+  onboardingPersonaSubtitle: string;
+  settingsCompanion: string;
+
+  // Home — data as narrative
+  homeStorySectionTitle: string;
+  homeCleanAirTitle: string;
+  homeCleanAirCaption: string;
+  homeAvoidedTitle: string;
+  homeAvoidedCaption: string;
+  homeLifeTitle: string;
+  homeLifeCaption: string;
+  homeMoneyPrefix: string;
+  moneyStoryStart: string;
+  moneyStoryCoffee: string;
+  moneyStoryMeal: string;
+  moneyStoryDinner: string;
+  moneyStoryTreat: string;
+  moneyStoryGetaway: string;
+  unitMin: string;
+
+  // Coach empty state
+  coachEmptyTitle: string;
+  coachEmptySubtitle: string;
+
+  // Intervention hub
+  interveneTitle: string;
+  interveneSubtitle: string;
+  interveneCalming: string;
+  interveneCalmingDesc: string;
+  interveneCognitive: string;
+  interveneCognitiveDesc: string;
+  interveneIncentive: string;
+  interveneIncentiveDesc: string;
+  intervenePhysical: string;
+  intervenePhysicalDesc: string;
+  interveneDistraction: string;
+  interveneDistractionDesc: string;
+  interveneChooseAnother: string;
+  interveneReflectDone: string;
+  cognitiveIntro: string;
+  cognitivePrompt1: string;
+  cognitivePrompt2: string;
+  cognitivePrompt3: string;
+  physicalIntro: string;
+  physicalStep1: string;
+  physicalStep2: string;
+  physicalStep3: string;
+  distractionIntro: string;
+  distractionTask1: string;
+  distractionTask2: string;
+  distractionTask3: string;
+  incentiveIntro: string;
 };
 
 const en: TranslationKeys = {
@@ -428,6 +490,64 @@ const en: TranslationKeys = {
   errorNetwork: "Something didn't sync — we'll retry automatically.",
   errorAuth: 'Sign in failed. Please check your details.',
   errorSync: 'Could not save right now — queued for retry.',
+
+  companionWord: 'companion',
+  personaMentor: 'Wise Mentor',
+  personaMentorTagline: 'Grounded and insightful — speaks with quiet wisdom.',
+  personaFriend: 'Friend',
+  personaFriendTagline: 'Warm and casual — celebrates every win with you.',
+  personaGuide: 'Calm Guide',
+  personaGuideTagline: 'Gentle and present, like a slow, steady breath.',
+  onboardingPersonaTitle: 'Choose your companion',
+  onboardingPersonaSubtitle: "They'll walk this journey with you. You can change them any time.",
+  settingsCompanion: 'Your companion',
+
+  homeStorySectionTitle: 'Your story so far',
+  homeCleanAirTitle: 'Clean breathing',
+  homeCleanAirCaption: 'minutes of easier breaths reclaimed',
+  homeAvoidedTitle: 'Not smoked',
+  homeAvoidedCaption: "cigarettes you chose not to light",
+  homeLifeTitle: 'Life regained',
+  homeLifeCaption: 'estimated minutes returned to you',
+  homeMoneyPrefix: "That's enough for",
+  moneyStoryStart: 'a small treat, very soon',
+  moneyStoryCoffee: 'a good cup of coffee',
+  moneyStoryMeal: 'a proper meal out',
+  moneyStoryDinner: 'a celebratory dinner',
+  moneyStoryTreat: 'a gift for someone you love',
+  moneyStoryGetaway: 'a little weekend getaway',
+  unitMin: 'min',
+
+  coachEmptyTitle: "I'm here with you",
+  coachEmptySubtitle: "I know your progress, your triggers, and your wins. Tell me what's on your mind — no judgment, ever.",
+
+  interveneTitle: 'Ride the wave',
+  interveneSubtitle: 'A craving is a wave — it rises, crests, and always falls. Pick what you need right now.',
+  interveneCalming: 'Breathe',
+  interveneCalmingDesc: 'A guided breathing space to settle your body.',
+  interveneCognitive: 'Future self',
+  interveneCognitiveDesc: 'Reconnect with the reason you started.',
+  interveneIncentive: 'See your wins',
+  interveneIncentiveDesc: 'Watch what your progress is already buying back.',
+  intervenePhysical: 'Reset your body',
+  intervenePhysicalDesc: 'Small physical actions that ease the urge.',
+  interveneDistraction: 'Shift focus',
+  interveneDistractionDesc: 'A tiny challenge to let the wave pass.',
+  interveneChooseAnother: 'Choose something else',
+  interveneReflectDone: 'I feel steadier now',
+  cognitiveIntro: 'Take a slow breath and sit with one of these:',
+  cognitivePrompt1: 'Picture yourself a year from now, breathing easily on a morning walk. What does that version of you feel?',
+  cognitivePrompt2: 'Remember why you started. Who — or what — are you doing this for?',
+  cognitivePrompt3: 'This craving passes whether you smoke or not. What would the you-you-want-to-be choose right now?',
+  physicalIntro: 'Cravings live in the body. Move through these three:',
+  physicalStep1: 'Drink a full glass of water, slowly.',
+  physicalStep2: 'Stand and stretch your arms overhead for 20 seconds.',
+  physicalStep3: 'Roll your shoulders back five times and unclench your jaw.',
+  distractionIntro: 'Give your mind a small, absorbing task for two minutes:',
+  distractionTask1: 'Name five things you can see, four you can hear, three you can touch.',
+  distractionTask2: 'Count backwards from 100 in sevens: 100, 93, 86…',
+  distractionTask3: 'Send someone you care about a single kind sentence.',
+  incentiveIntro: 'Every craving you ride is already paying off:',
 };
 
 const hi: TranslationKeys = {
@@ -636,6 +756,64 @@ const hi: TranslationKeys = {
   errorNetwork: 'कुछ सिंक नहीं हुआ — हम स्वचालित रूप से पुनः प्रयास करेंगे।',
   errorAuth: 'साइन इन विफल। कृपया अपनी जानकारी जांचें।',
   errorSync: 'अभी सेव नहीं हो सका — पुनः प्रयास के लिए कतार में है।',
+
+  companionWord: 'साथी',
+  personaMentor: 'बुद्धिमान मार्गदर्शक',
+  personaMentorTagline: 'गंभीर और अंतर्दृष्टिपूर्ण — शांत ज्ञान से बात करता है।',
+  personaFriend: 'दोस्त',
+  personaFriendTagline: 'गर्मजोश और सहज — हर जीत आपके साथ मनाता है।',
+  personaGuide: 'शांत गाइड',
+  personaGuideTagline: 'कोमल और मौजूद, एक धीमी, स्थिर सांस की तरह।',
+  onboardingPersonaTitle: 'अपना साथी चुनें',
+  onboardingPersonaSubtitle: 'वे इस सफर में आपके साथ चलेंगे। आप इन्हें कभी भी बदल सकते हैं।',
+  settingsCompanion: 'आपका साथी',
+
+  homeStorySectionTitle: 'अब तक की आपकी कहानी',
+  homeCleanAirTitle: 'साफ सांसें',
+  homeCleanAirCaption: 'आसान सांसों के वापस पाए मिनट',
+  homeAvoidedTitle: 'नहीं पी',
+  homeAvoidedCaption: 'सिगरेट जो आपने नहीं जलाईं',
+  homeLifeTitle: 'वापस पाया जीवन',
+  homeLifeCaption: 'अनुमानित मिनट जो आपको लौटे',
+  homeMoneyPrefix: 'यह काफी है',
+  moneyStoryStart: 'जल्द ही एक छोटी खुशी के लिए',
+  moneyStoryCoffee: 'एक अच्छी कॉफी के लिए',
+  moneyStoryMeal: 'बाहर एक अच्छे भोजन के लिए',
+  moneyStoryDinner: 'एक जश्न के डिनर के लिए',
+  moneyStoryTreat: 'किसी प्रिय के लिए तोहफे के लिए',
+  moneyStoryGetaway: 'एक छोटी वीकेंड सैर के लिए',
+  unitMin: 'मिनट',
+
+  coachEmptyTitle: 'मैं आपके साथ हूं',
+  coachEmptySubtitle: 'मुझे आपकी प्रगति, ट्रिगर और जीतें पता हैं। जो मन में है बताएं — कोई निर्णय नहीं, कभी नहीं।',
+
+  interveneTitle: 'लहर के साथ बहें',
+  interveneSubtitle: 'तलब एक लहर है — यह उठती है, चरम पर आती है और हमेशा गिरती है। अभी जो चाहिए वह चुनें।',
+  interveneCalming: 'सांस लें',
+  interveneCalmingDesc: 'शरीर को शांत करने के लिए निर्देशित सांस।',
+  interveneCognitive: 'भविष्य का मैं',
+  interveneCognitiveDesc: 'जिस कारण से शुरू किया उससे फिर जुड़ें।',
+  interveneIncentive: 'अपनी जीतें देखें',
+  interveneIncentiveDesc: 'देखें आपकी प्रगति क्या लौटा रही है।',
+  intervenePhysical: 'शरीर को रीसेट करें',
+  intervenePhysicalDesc: 'छोटे शारीरिक काम जो तलब कम करते हैं।',
+  interveneDistraction: 'ध्यान बदलें',
+  interveneDistractionDesc: 'लहर को गुजरने देने के लिए एक छोटी चुनौती।',
+  interveneChooseAnother: 'कुछ और चुनें',
+  interveneReflectDone: 'अब मैं ज्यादा स्थिर महसूस करता हूं',
+  cognitiveIntro: 'एक धीमी सांस लें और इनमें से किसी पर ठहरें:',
+  cognitivePrompt1: 'एक साल बाद खुद की कल्पना करें, सुबह की सैर में आसानी से सांस लेते हुए। वह आप कैसा महसूस करता है?',
+  cognitivePrompt2: 'याद करें आपने क्यों शुरू किया। किसके लिए कर रहे हैं?',
+  cognitivePrompt3: 'यह तलब गुजर जाएगी चाहे आप पिएं या नहीं। जो आप बनना चाहते हैं वह अभी क्या चुनेगा?',
+  physicalIntro: 'तलब शरीर में रहती है। इन तीन से गुजरें:',
+  physicalStep1: 'धीरे-धीरे एक पूरा गिलास पानी पिएं।',
+  physicalStep2: 'खड़े होकर 20 सेकंड अपनी बाहें ऊपर फैलाएं।',
+  physicalStep3: 'अपने कंधे पांच बार पीछे घुमाएं और जबड़ा ढीला करें।',
+  distractionIntro: 'दो मिनट के लिए मन को एक छोटा काम दें:',
+  distractionTask1: 'पांच चीजें बताएं जो आप देख सकते हैं, चार जो सुन सकते हैं, तीन जो छू सकते हैं।',
+  distractionTask2: '100 से सात-सात घटाकर उल्टा गिनें: 100, 93, 86…',
+  distractionTask3: 'किसी प्रिय को एक अच्छा वाक्य भेजें।',
+  incentiveIntro: 'हर तलब जिसे आप संभालते हैं वह पहले से फायदा दे रही है:',
 };
 
 const bn: TranslationKeys = {
@@ -844,6 +1022,64 @@ const bn: TranslationKeys = {
   errorNetwork: 'কিছু সিঙ্ক হয়নি — আমরা স্বয়ংক্রিয়ভাবে পুনরায় চেষ্টা করব।',
   errorAuth: 'সাইন ইন ব্যর্থ। আপনার তথ্য পরীক্ষা করুন।',
   errorSync: 'এখন সংরক্ষণ করা যায়নি — পুনরায় চেষ্টার জন্য সারিতে আছে।',
+
+  companionWord: 'সঙ্গী',
+  personaMentor: 'জ্ঞানী পথপ্রদর্শক',
+  personaMentorTagline: 'দৃঢ় ও অন্তর্দৃষ্টিসম্পন্ন — শান্ত প্রজ্ঞায় কথা বলে।',
+  personaFriend: 'বন্ধু',
+  personaFriendTagline: 'উষ্ণ ও সহজ — প্রতিটি জয় আপনার সাথে উদযাপন করে।',
+  personaGuide: 'শান্ত গাইড',
+  personaGuideTagline: 'কোমল ও উপস্থিত, ধীর স্থির শ্বাসের মতো।',
+  onboardingPersonaTitle: 'আপনার সঙ্গী বেছে নিন',
+  onboardingPersonaSubtitle: 'তারা এই যাত্রায় আপনার সাথে থাকবে। আপনি যেকোনো সময় বদলাতে পারেন।',
+  settingsCompanion: 'আপনার সঙ্গী',
+
+  homeStorySectionTitle: 'এ পর্যন্ত আপনার গল্প',
+  homeCleanAirTitle: 'পরিষ্কার শ্বাস',
+  homeCleanAirCaption: 'সহজ শ্বাসের ফিরে পাওয়া মিনিট',
+  homeAvoidedTitle: 'ধরাননি',
+  homeAvoidedCaption: 'যে সিগারেট আপনি জ্বালাননি',
+  homeLifeTitle: 'ফিরে পাওয়া জীবন',
+  homeLifeCaption: 'আপনাকে ফিরিয়ে দেওয়া আনুমানিক মিনিট',
+  homeMoneyPrefix: 'এটি যথেষ্ট',
+  moneyStoryStart: 'শীঘ্রই একটি ছোট আনন্দের জন্য',
+  moneyStoryCoffee: 'একটি ভালো কফির জন্য',
+  moneyStoryMeal: 'বাইরে একটি ভালো খাবারের জন্য',
+  moneyStoryDinner: 'একটি উদযাপনের ডিনারের জন্য',
+  moneyStoryTreat: 'প্রিয় কারও জন্য উপহারের জন্য',
+  moneyStoryGetaway: 'একটি ছোট সাপ্তাহিক ভ্রমণের জন্য',
+  unitMin: 'মিনিট',
+
+  coachEmptyTitle: 'আমি আপনার সাথে আছি',
+  coachEmptySubtitle: 'আমি আপনার অগ্রগতি, ট্রিগার ও জয় জানি। মনে যা আছে বলুন — কখনো বিচার নয়।',
+
+  interveneTitle: 'ঢেউয়ের সাথে বয়ে যান',
+  interveneSubtitle: 'আকাঙ্ক্ষা একটি ঢেউ — ওঠে, চূড়ায় পৌঁছায় এবং সবসময় নেমে যায়। এখন যা দরকার বেছে নিন।',
+  interveneCalming: 'শ্বাস নিন',
+  interveneCalmingDesc: 'শরীর শান্ত করার জন্য নির্দেশিত শ্বাস।',
+  interveneCognitive: 'ভবিষ্যতের আমি',
+  interveneCognitiveDesc: 'যে কারণে শুরু করেছিলেন তার সাথে পুনরায় যুক্ত হন।',
+  interveneIncentive: 'আপনার জয় দেখুন',
+  interveneIncentiveDesc: 'দেখুন আপনার অগ্রগতি কী ফিরিয়ে দিচ্ছে।',
+  intervenePhysical: 'শরীর রিসেট করুন',
+  intervenePhysicalDesc: 'ছোট শারীরিক কাজ যা আকাঙ্ক্ষা কমায়।',
+  interveneDistraction: 'মনোযোগ সরান',
+  interveneDistractionDesc: 'ঢেউটি কেটে যেতে দেওয়ার একটি ছোট চ্যালেঞ্জ।',
+  interveneChooseAnother: 'অন্য কিছু বেছে নিন',
+  interveneReflectDone: 'এখন আমি আরও স্থির বোধ করছি',
+  cognitiveIntro: 'একটি ধীর শ্বাস নিন এবং এর একটিতে থামুন:',
+  cognitivePrompt1: 'এক বছর পরের নিজেকে কল্পনা করুন, সকালের হাঁটায় সহজে শ্বাস নিচ্ছেন। সেই আপনি কেমন অনুভব করে?',
+  cognitivePrompt2: 'মনে করুন কেন শুরু করেছিলেন। কার জন্য করছেন?',
+  cognitivePrompt3: 'এই আকাঙ্ক্ষা কেটে যাবে আপনি ধূমপান করুন বা না করুন। আপনি যা হতে চান সে এখন কী বেছে নেবে?',
+  physicalIntro: 'আকাঙ্ক্ষা শরীরে থাকে। এই তিনটি করুন:',
+  physicalStep1: 'ধীরে ধীরে এক গ্লাস পানি পান করুন।',
+  physicalStep2: 'দাঁড়িয়ে ২০ সেকেন্ড হাত মাথার উপরে প্রসারিত করুন।',
+  physicalStep3: 'কাঁধ পাঁচবার পিছনে ঘোরান এবং চোয়াল শিথিল করুন।',
+  distractionIntro: 'দুই মিনিটের জন্য মনকে একটি ছোট কাজ দিন:',
+  distractionTask1: 'পাঁচটি জিনিস বলুন যা দেখতে পান, চারটি শুনতে পান, তিনটি ছুঁতে পারেন।',
+  distractionTask2: '১০০ থেকে সাত করে উল্টো গুনুন: ১০০, ৯৩, ৮৬…',
+  distractionTask3: 'প্রিয় কাউকে একটি সদয় বাক্য পাঠান।',
+  incentiveIntro: 'প্রতিটি আকাঙ্ক্ষা যা আপনি সামলান তা ইতিমধ্যে ফল দিচ্ছে:',
 };
 
 export const translations: Record<Locale, TranslationKeys> = { en, hi, bn };
