@@ -24,9 +24,18 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 export const hasSupabaseConfig = (): boolean =>
   SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.length > 20;
 
+// SSR-safe storage for Web (EAS Hosting)
+const ExpoSSRStorage = {
+  getItem: (key: string) => { return null; },
+  setItem: (key: string, value: string) => { },
+  removeItem: (key: string) => { },
+};
+
+const storageAdapter = typeof window !== 'undefined' ? AsyncStorage : ExpoSSRStorage;
+
 export const supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_ANON_KEY || 'placeholder', {
   auth: {
-    storage: AsyncStorage as any,
+    storage: storageAdapter as any,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
