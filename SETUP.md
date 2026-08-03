@@ -133,18 +133,30 @@ service-role key would be. Never put a Supabase **service role** key in
 
 ## 6. Build
 
-`eas.json` has three profiles:
+`eas.json` has four profiles. The two `production*` profiles share the same
+channel and version (`production-apk` `extends` `production`), so a release
+always exists in both formats:
 
 | Profile | Distribution | Android output | Use for |
 |---|---|---|---|
 | `development` | internal | APK | dev client for local iteration |
 | `preview` | internal | APK | install directly on a test device, no store needed |
 | `production` | store | **AAB (app bundle)** | Play Store submission — Google requires AAB for new apps |
+| `production-apk` | internal | **APK** | side-loadable release build, direct install/distribution outside the Play Store |
+
+Build a release in both formats:
 
 ```bash
-eas build --platform android --profile preview      # quick test APK
-eas build --platform android --profile production   # AAB for the Play Store
+eas build --platform android --profile production       # AAB for the Play Store
+eas build --platform android --profile production-apk   # APK, same version, for direct install
 ```
+
+`eas build` takes one profile per invocation, so run them back-to-back (or
+in parallel in two terminals) rather than in a single command.
+`.github/workflows/eas-build.yml` runs both automatically — pushing a `v*`
+tag (or running the workflow manually via **Actions → EAS Build Android →
+Run workflow**) builds both `production` and `production-apk` in parallel;
+a plain push to `main` still just builds the fast `preview` APK.
 
 EAS prints a download URL when each build finishes. `preview` gives you a
 `.apk` you can install directly; `production` gives you a `.aab` for the
