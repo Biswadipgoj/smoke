@@ -13,6 +13,7 @@ import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-font
 import * as SplashScreen from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
 import { useDhruvStore } from '../src/store/useDhruvStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import { AppLockGate } from '../src/components/AppLockGate';
 
 SplashScreen.preventAutoHideAsync();
@@ -21,6 +22,8 @@ export default function RootLayout() {
   const loadFromStorage = useDhruvStore((s) => s.loadFromStorage);
   const hydrated = useDhruvStore((s) => s.hydrated);
   const profile = useDhruvStore((s) => s.profile);
+  const initAuth = useAuthStore((s) => s.init);
+  const authChecked = useAuthStore((s) => s.checked);
 
   // EAS Update — silently pull & apply the newest OTA bundle on cold start.
   useEffect(() => {
@@ -50,15 +53,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     loadFromStorage();
+    initAuth();
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && hydrated) {
+    if (fontsLoaded && hydrated && authChecked) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, hydrated]);
+  }, [fontsLoaded, hydrated, authChecked]);
 
-  if (!fontsLoaded || !hydrated) return null;
+  if (!fontsLoaded || !hydrated || !authChecked) return null;
 
   const isDark = !profile || profile.settings.themeMode !== 'light';
 
@@ -68,6 +72,7 @@ export default function RootLayout() {
       <AppLockGate>
         <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
           <Stack.Screen name="index" />
+          <Stack.Screen name="auth" />
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
           {/* Urge is enterable from anywhere, full-screen takeover — master doc §5.2 */}

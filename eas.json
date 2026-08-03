@@ -23,6 +23,12 @@
       "autoIncrement": true,
       "channel": "production",
       "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "production-apk": {
+      "extends": "production",
+      "android": {
         "buildType": "apk"
       }
     }

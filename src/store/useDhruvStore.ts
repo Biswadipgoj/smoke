@@ -1,5 +1,10 @@
 // src/store/useDhruvStore.ts
-// The local-first store. Local is always the source of truth (master doc §14).
+// The local store — an offline read cache in front of a Supabase backend
+// that is the source of truth (see src/lib/sync.ts, src/lib/auth.ts). Every
+// mutation writes to AsyncStorage immediately (so the app stays usable
+// offline) and pushes to the server in the background, best-effort. On
+// sign-in, hydrateFromRemote() (src/lib/auth.ts) overwrites this state with
+// the server's copy — local never wins a conflict.
 // No streak field exists anywhere in this file. Nothing is ever deleted except
 // on explicit user request (settings → data → delete an item).
 import { create } from 'zustand';
@@ -8,6 +13,10 @@ import {
   Track, TrackType, Baseline, ConsumptionEvent, UrgeEvent, UrgeOutcome, UrgeIntensityPoint,
   LapseEvent, CheckIn, ThreadBead, ImplementationIntention, Profile, Settings, Locale,
 } from '../domain/types';
+import {
+  pushProfile, pushTrack, pushEvent, pushUrge, pushLapse, pushCheckIn, pushBead,
+  pushIntention, deleteIntentionRemote, deleteAllRemote,
+} from '../lib/sync';
 
 const STORAGE_KEY = 'dhruv_store_v1';
 
@@ -26,15 +35,6 @@ const defaultSettings: Settings = {
   notificationsEnabled: true,
   currency: '₹',
 };
-
-function defaultProfile(): Profile {
-  return {
-    id: uid(),
-    createdAt: new Date().toISOString(),
-    onboardingComplete: false,
-    settings: defaultSettings,
-  };
-}
 
 interface DhruvState {
   hydrated: boolean;
@@ -84,11 +84,12 @@ interface DhruvState {
   deleteEverything: () => Promise<void>;
 }
 
-function addDayBeadIfNeeded(beads: ThreadBead[]): ThreadBead[] {
+function addDayBeadIfNeeded(beads: ThreadBead[]): { beads: ThreadBead[]; added: ThreadBead | null } {
   const today = new Date().toISOString().slice(0, 10);
   const hasTodayBead = beads.some((b) => b.type === 'day' && b.createdAt.slice(0, 10) === today);
-  if (hasTodayBead) return beads;
-  return [...beads, { id: uid(), type: 'day', track: null, createdAt: new Date().toISOString() }];
+  if (hasTodayBead) return { beads, added: null };
+  const bead: ThreadBead = { id: uid(), type: 'day', track: null, createdAt: new Date().toISOString() };
+  return { beads: [...beads, bead], added: bead };
 }
 
 export const useDhruvStore = create<DhruvState>((set, get) => ({
@@ -103,16 +104,18 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
   intentions: [],
 
   loadFromStorage: async () => {
+    // Warm-start from the local cache only. A null profile means "no cached
+    // session yet" — the root layout decides whether to pull from Supabase
+    // or route to /auth, never this store.
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        set({ ...parsed, hydrated: true });
+        set({ ...JSON.parse(raw), hydrated: true });
       } else {
-        set({ profile: defaultProfile(), hydrated: true });
+        set({ hydrated: true });
       }
     } catch {
-      set({ profile: defaultProfile(), hydrated: true });
+      set({ hydrated: true });
     }
   },
 
@@ -134,13 +137,16 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
     if (!profile) return;
     set({ profile: { ...profile, onboardingComplete: true } });
     get().saveToStorage();
+    pushProfile(profile.settings, true);
   },
 
   updateSettings: (patch) => {
     const { profile } = get();
     if (!profile) return;
-    set({ profile: { ...profile, settings: { ...profile.settings, ...patch } } });
+    const settings = { ...profile.settings, ...patch };
+    set({ profile: { ...profile, settings } });
     get().saveToStorage();
+    pushProfile(settings, profile.onboardingComplete);
   },
 
   setLocale: (locale) => get().updateSettings({ locale }),
@@ -149,17 +155,22 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
     const track: Track = { id: uid(), type, startedAt: new Date().toISOString(), quitDate, baseline, active: true };
     set((s) => ({ tracks: [...s.tracks, track] }));
     get().saveToStorage();
+    pushTrack(track);
   },
 
   updateTrackBaseline: (trackId, baseline) => {
     set((s) => ({ tracks: s.tracks.map((t) => (t.id === trackId ? { ...t, baseline } : t)) }));
     get().saveToStorage();
+    const track = get().tracks.find((t) => t.id === trackId);
+    if (track) pushTrack(track);
   },
 
   setTrackActive: (trackId, active) => {
     // Pausing a track never deletes its history — reversible per master doc §3.3.
     set((s) => ({ tracks: s.tracks.map((t) => (t.id === trackId ? { ...t, active } : t)) }));
     get().saveToStorage();
+    const track = get().tracks.find((t) => t.id === trackId);
+    if (track) pushTrack(track);
   },
 
   acknowledgeAlcoholGate: (trackId) => {
@@ -170,11 +181,14 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
       }),
     }));
     get().saveToStorage();
+    const track = get().tracks.find((t) => t.id === trackId);
+    if (track) pushTrack(track);
   },
 
   logEvent: (event) => {
     set((s) => ({ events: [...s.events, event] }));
     get().saveToStorage();
+    pushEvent(event);
   },
 
   startUrge: (track, initialIntensity, trigger, locationContext) => {
@@ -192,6 +206,7 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
     };
     set((s) => ({ urges: [...s.urges, urge] }));
     get().saveToStorage();
+    pushUrge(urge);
     return urge;
   },
 
@@ -205,9 +220,13 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
       }),
     }));
     get().saveToStorage();
+    const urge = get().urges.find((u) => u.id === urgeId);
+    if (urge) pushUrge(urge);
   },
 
   closeUrge: (urgeId, outcome, usedBreathing) => {
+    let newBead: ThreadBead | null = null;
+    let dayBead: ThreadBead | null = null;
     set((s) => {
       const urges = s.urges.map((u) =>
         u.id === urgeId ? { ...u, endedAt: new Date().toISOString(), outcome, usedBreathing } : u
@@ -215,46 +234,59 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
       let beads = s.beads;
       if (outcome === 'surfed' || outcome === 'alternative') {
         const urge = urges.find((u) => u.id === urgeId);
-        beads = [...beads, { id: uid(), type: 'surf', track: urge?.track ?? null, createdAt: new Date().toISOString() }];
+        newBead = { id: uid(), type: 'surf', track: urge?.track ?? null, createdAt: new Date().toISOString() };
+        beads = [...beads, newBead];
       }
-      beads = addDayBeadIfNeeded(beads);
-      return { urges, beads };
+      const withDay = addDayBeadIfNeeded(beads);
+      dayBead = withDay.added;
+      return { urges, beads: withDay.beads };
     });
     get().saveToStorage();
+    const urge = get().urges.find((u) => u.id === urgeId);
+    if (urge) pushUrge(urge);
+    if (newBead) pushBead(newBead);
+    if (dayBead) pushBead(dayBead);
   },
 
   recordLapse: (track, trigger, note, linkedUrgeId) => {
     const lapse: LapseEvent = { id: uid(), track, timestamp: new Date().toISOString(), trigger, note, linkedUrgeId };
-    set((s) => ({
-      lapses: [...s.lapses, lapse],
-      // The ash bead arrives identically to every other bead. The thread does
-      // not break, thin, fray, or change colour above it. Doc 01 §4.3.
-      beads: [...s.beads, { id: uid(), type: 'ash', track, createdAt: new Date().toISOString() }],
-    }));
+    // The ash bead arrives identically to every other bead. The thread does
+    // not break, thin, fray, or change colour above it. Doc 01 §4.3.
+    const ashBead: ThreadBead = { id: uid(), type: 'ash', track, createdAt: new Date().toISOString() };
+    set((s) => ({ lapses: [...s.lapses, lapse], beads: [...s.beads, ashBead] }));
     get().saveToStorage();
+    pushLapse(lapse);
+    pushBead(ashBead);
   },
 
   recordCheckIn: (checkIn) => {
-    set((s) => ({ checkIns: [...s.checkIns, { id: uid(), ...checkIn }] }));
+    const withId = { id: uid(), ...checkIn };
+    set((s) => ({ checkIns: [...s.checkIns, withId] }));
     get().saveToStorage();
+    pushCheckIn(withId);
   },
 
   addIntention: (intention) => {
-    set((s) => ({ intentions: [...s.intentions, { id: uid(), createdAt: new Date().toISOString(), ...intention }] }));
+    const withId: ImplementationIntention = { id: uid(), createdAt: new Date().toISOString(), ...intention };
+    set((s) => ({ intentions: [...s.intentions, withId] }));
     get().saveToStorage();
+    pushIntention(withId);
   },
 
   removeIntention: (id) => {
     set((s) => ({ intentions: s.intentions.filter((i) => i.id !== id) }));
     get().saveToStorage();
+    deleteIntentionRemote(id);
   },
 
   deleteEverything: async () => {
+    const { profile } = get();
     set({
-      profile: defaultProfile(),
+      profile: profile ? { ...profile, onboardingComplete: false, settings: defaultSettings } : null,
       tracks: [], events: [], urges: [], lapses: [], checkIns: [], beads: [], intentions: [],
     });
     await AsyncStorage.removeItem(STORAGE_KEY);
+    await deleteAllRemote();
   },
 }));
 
