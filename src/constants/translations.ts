@@ -76,6 +76,7 @@ export type TranslationKeys = {
   // Companion / Offline Coach
   companionTitle: string; companionOfflineNotice: string; companionChoosePath: string;
   companionUrgeHelp: string; companionHaltCheck: string; companionAfterLapse: string; companionDelayTechnique: string;
+  companionInputPlaceholder: string; companionSend: string; companionNetworkFallback: string; companionGuidedPathsBelow: string;
 
   // Crisis
   crisisTitle: string; crisisSubtitle: string; crisisCallNow: string; crisisFindHelpline: string;
@@ -163,8 +164,9 @@ const en: TranslationKeys = {
   youTracksTitle: 'Tracks', youAddTrack: 'Add a track', youTriggersTitle: 'Triggers', youMilestonesTitle: 'Milestones', youSettingsTitle: 'Settings',
   youYearProjection: 'At this rate, over a year',
 
-  companionTitle: 'Companion', companionOfflineNotice: 'This is a scripted coach — no network needed, no AI yet. A learning companion is planned for later.',
+  companionTitle: 'Companion', companionOfflineNotice: 'Type anything below to talk. No network? The guided paths further down work fully offline.',
   companionChoosePath: 'What would help right now?', companionUrgeHelp: 'Help with an urge', companionHaltCheck: 'Check in with myself', companionAfterLapse: 'After a lapse', companionDelayTechnique: 'A delay technique',
+  companionInputPlaceholder: 'Say anything', companionSend: 'Send', companionNetworkFallback: 'I can’t reach the network right now, but I can still walk you through this below.', companionGuidedPathsBelow: 'Or pick a guided path',
 
   crisisTitle: 'Get support now', crisisSubtitle: 'You don’t have to explain anything to call.', crisisCallNow: 'Call now', crisisFindHelpline: 'Find a helpline near you',
 
@@ -240,8 +242,9 @@ const hi: TranslationKeys = {
   youReclaimedTitle: 'वापस पाया', youReclaimedMoney: 'पैसा', youReclaimedHours: 'घंटे', youReclaimedSleep: 'नींद',
   youTracksTitle: 'ट्रैक', youAddTrack: 'ट्रैक जोड़ें', youTriggersTitle: 'ट्रिगर', youMilestonesTitle: 'मील के पत्थर', youSettingsTitle: 'सेटिंग्स',
   youYearProjection: 'इस दर पर, एक साल में',
-  companionTitle: 'साथी', companionOfflineNotice: 'यह एक स्क्रिप्टेड कोच है — नेटवर्क की ज़रूरत नहीं, अभी कोई AI नहीं। सीखने वाला साथी आगे आएगा।',
+  companionTitle: 'साथी', companionOfflineNotice: 'बात करने के लिए नीचे कुछ भी लिखें। नेटवर्क नहीं है? नीचे दिए रास्ते पूरी तरह ऑफ़लाइन काम करते हैं।',
   companionChoosePath: 'अभी क्या मदद करेगा?', companionUrgeHelp: 'तलब में मदद', companionHaltCheck: 'खुद को जांचें', companionAfterLapse: 'फिसलने के बाद', companionDelayTechnique: 'देरी की तकनीक',
+  companionInputPlaceholder: 'कुछ भी कहें', companionSend: 'भेजें', companionNetworkFallback: 'अभी नेटवर्क तक नहीं पहुंच पा रहा, लेकिन मैं आपको नीचे दिए तरीके से मदद कर सकता हूं।', companionGuidedPathsBelow: 'या एक गाइडेड रास्ता चुनें',
   crisisTitle: 'अभी मदद लें', crisisSubtitle: 'कॉल करने के लिए कुछ समझाना ज़रूरी नहीं।', crisisCallNow: 'अभी कॉल करें', crisisFindHelpline: 'अपने पास की हेल्पलाइन खोजें',
   settingsLanguage: 'भाषा', settingsTheme: 'रूप', settingsThemeDark: 'डार्क', settingsThemeLight: 'लाइट', settingsThemeOled: 'ट्रू ब्लैक (OLED)', settingsThemeSystem: 'सिस्टम अनुसार',
   settingsHaptics: 'हैप्टिक्स', settingsHapticsFull: 'पूरा', settingsHapticsEssential: 'ज़रूरी ही', settingsHapticsOff: 'बंद',
@@ -313,8 +316,9 @@ const bn: TranslationKeys = {
   youReclaimedTitle: 'ফিরে পাওয়া', youReclaimedMoney: 'অর্থ', youReclaimedHours: 'ঘণ্টা', youReclaimedSleep: 'ঘুম',
   youTracksTitle: 'ট্র্যাক', youAddTrack: 'ট্র্যাক যোগ করুন', youTriggersTitle: 'ট্রিগার', youMilestonesTitle: 'মাইলফলক', youSettingsTitle: 'সেটিংস',
   youYearProjection: 'এই হারে, এক বছরে',
-  companionTitle: 'সঙ্গী', companionOfflineNotice: 'এটি একটি স্ক্রিপ্টেড কোচ — নেটওয়ার্কের দরকার নেই, এখনও কোনো AI নেই। শেখার সঙ্গী পরে আসছে।',
+  companionTitle: 'সঙ্গী', companionOfflineNotice: 'কথা বলতে নিচে যা খুশি লিখুন। নেটওয়ার্ক নেই? নিচের গাইডেড পথগুলো সম্পূর্ণ অফলাইনে কাজ করে।',
   companionChoosePath: 'এখন কী সাহায্য করবে?', companionUrgeHelp: 'আকাঙ্ক্ষায় সাহায্য', companionHaltCheck: 'নিজেকে যাচাই করুন', companionAfterLapse: 'হোঁচটের পর', companionDelayTechnique: 'বিলম্ব কৌশল',
+  companionInputPlaceholder: 'যা খুশি বলুন', companionSend: 'পাঠান', companionNetworkFallback: 'এখন নেটওয়ার্কে পৌঁছাতে পারছি না, তবে নিচে দেওয়া উপায়ে আপনাকে সাহায্য করতে পারি।', companionGuidedPathsBelow: 'অথবা একটি গাইডেড পথ বেছে নিন',
   crisisTitle: 'এখনই সাহায্য নিন', crisisSubtitle: 'কল করতে কিছু ব্যাখ্যা করার দরকার নেই।', crisisCallNow: 'এখনই কল করুন', crisisFindHelpline: 'আপনার কাছের হেল্পলাইন খুঁজুন',
   settingsLanguage: 'ভাষা', settingsTheme: 'রূপ', settingsThemeDark: 'ডার্ক', settingsThemeLight: 'লাইট', settingsThemeOled: 'ট্রু ব্ল্যাক (OLED)', settingsThemeSystem: 'সিস্টেম অনুযায়ী',
   settingsHaptics: 'হ্যাপটিক্স', settingsHapticsFull: 'সম্পূর্ণ', settingsHapticsEssential: 'শুধু প্রয়োজনীয়', settingsHapticsOff: 'বন্ধ',
