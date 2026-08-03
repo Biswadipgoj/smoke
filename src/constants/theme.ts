@@ -1,135 +1,52 @@
 // src/constants/theme.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// The living design system for the AI Wellness Companion.
-// Everything here is authored, not templated: colors breathe with the time of
-// day, spacing follows a calm rhythm, and motion has meaning.
+// Dhruv design tokens. Dark-first, no red anywhere, numbers de-emphasized.
+// See doc 01 (Motion & Design System) §2 and master doc §2.4–2.5.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const Colors = {
-  // Primary — Calm Teal (the companion's voice)
-  primary: '#2DD4BF',
-  primaryDark: '#14B8A6',
-  primaryLight: '#5EEAD4',
-  primaryMuted: '#99F6E4',
+  // Surfaces
+  nishith: '#101426', // nightfall — base surface, never pure black
+  nil: '#1C2340', // indigo — elevated surfaces, cards, sheets
+  nilElevated: '#242C52',
 
-  // Aurora accents — used for narrative highlights & healing motion
-  aurora: '#7C6BFF',       // gentle violet
-  auroraSoft: '#A78BFA',
-  rose: '#FB7B9E',         // warmth / emotional moments
-  roseSoft: '#FDA4C0',
-  sky: '#38BDF8',          // clarity / breathing
-  lime: '#A3E635',         // growth
-
-  // Backgrounds (dark is the primary, immersive canvas)
-  bgDark: '#0D1F2D',
-  bgDarkCard: '#132232',
-  bgDarkElevated: '#1A2F42',
-  bgLight: '#F8FFFE',
-  bgLightCard: '#FFFFFF',
-  bgLightElevated: '#F0FDFB',
+  // Accents — used with discipline, never mixed for "success/error" semantics
+  bhor: '#F0C070', // dawn — presence & progress only
+  bhorSoft: 'rgba(240, 192, 112, 0.16)',
+  jal: '#54A3A8', // water — urge mode, breathing, active coping
+  jalSoft: 'rgba(84, 163, 168, 0.16)',
+  chhai: '#8C90A6', // ash — lapse beads, neutral, destructive confirmations
+  chhaiSoft: 'rgba(140, 144, 166, 0.16)',
 
   // Text
-  textDark: '#E2F8F5',
-  textDarkSecondary: '#94A9B8',
-  textDarkMuted: '#546E7A',
-  textLight: '#0D2137',
-  textLightSecondary: '#4A6572',
-  textLightMuted: '#8FA8B4',
+  bone: '#E8EAF2', // primary text (dark surfaces)
+  boneSecondary: '#A6ACC4',
+  boneMuted: '#6E7390',
 
-  // Semantic
-  success: '#10B981',
-  successBg: '#D1FAE5',
-  amber: '#F59E0B',
-  amberBg: '#FEF3C7',
-  error: '#EF4444',         // ONLY for security/account errors, NEVER relapse
-  errorBg: '#FEE2E2',
+  // Light theme mirror (dark is the design intent, light ships as alternate)
+  lightBg: '#FAF8F4',
+  lightCard: '#FFFFFF',
+  lightElevated: '#F1EEE6',
+  lightText: '#20233A',
+  lightTextSecondary: '#4E5270',
+  lightTextMuted: '#8A8DA6',
 
-  // Accent for Achievements
-  gold: '#F59E0B',
-  goldGlow: '#FCD34D',
+  // OLED true-black option
+  trueBlack: '#000000',
 
-  // Glassmorphism
-  glassBg: 'rgba(13, 31, 45, 0.7)',
-  glassBgLight: 'rgba(248, 255, 254, 0.85)',
-  glassBorder: 'rgba(45, 212, 191, 0.2)',
-  glassBorderLight: 'rgba(45, 212, 191, 0.3)',
+  // Borders / overlays
+  hairline: 'rgba(232, 234, 242, 0.10)',
+  hairlineLight: 'rgba(32, 35, 58, 0.10)',
+  scrim: 'rgba(8, 10, 20, 0.55)',
 
-  // Overlay
-  overlay: 'rgba(0, 0, 0, 0.6)',
-  overlayLight: 'rgba(0, 0, 0, 0.3)',
+  // Tab / chrome
+  tabActive: '#F0C070',
+  tabInactive: '#6E7390',
+} as const;
 
-  // Tab Bar
-  tabBarActive: '#2DD4BF',
-  tabBarInactive: '#546E7A',
-  tabBarBgDark: '#0A1929',
-  tabBarBgLight: '#FFFFFF',
-
-  // Gradients (used as array pairs)
-  gradientPrimary: ['#0D2F3F', '#0D1F2D'] as const,
-  gradientCard: ['#132232', '#0D1F2D'] as const,
-  gradientTeal: ['#2DD4BF', '#14B8A6'] as const,
-  gradientGold: ['#F59E0B', '#D97706'] as const,
-};
-
-// ── The Living Home: time-of-day atmospheres ─────────────────────────────────
-// Each phase is a three-stop vertical gradient (top → mid → bottom) that sets
-// the emotional temperature of the app as the day unfolds.
-export type DayPhase = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
-
-export interface Atmosphere {
-  phase: DayPhase;
-  // gradient stops, top → bottom
-  gradient: [string, string, string];
-  // a soft accent glow that floats behind the hero content
-  glow: string;
-  accent: string;
-}
-
-const ATMOSPHERES: Record<DayPhase, Atmosphere> = {
-  dawn: {
-    phase: 'dawn',
-    gradient: ['#1A2A3A', '#132635', '#0D1F2D'],
-    glow: 'rgba(251, 123, 158, 0.18)',
-    accent: Colors.rose,
-  },
-  morning: {
-    phase: 'morning',
-    gradient: ['#123642', '#103038', '#0D1F2D'],
-    glow: 'rgba(56, 189, 248, 0.16)',
-    accent: Colors.sky,
-  },
-  afternoon: {
-    phase: 'afternoon',
-    gradient: ['#0F3A3C', '#0E2C31', '#0D1F2D'],
-    glow: 'rgba(45, 212, 191, 0.16)',
-    accent: Colors.primary,
-  },
-  evening: {
-    phase: 'evening',
-    gradient: ['#241E3A', '#191B30', '#0D1B25'],
-    glow: 'rgba(124, 107, 255, 0.20)',
-    accent: Colors.aurora,
-  },
-  night: {
-    phase: 'night',
-    gradient: ['#0B1622', '#0A1420', '#07101A'],
-    glow: 'rgba(124, 107, 255, 0.12)',
-    accent: Colors.auroraSoft,
-  },
-};
-
-export function getDayPhase(date: Date = new Date()): DayPhase {
-  const h = date.getHours();
-  if (h >= 5 && h < 8) return 'dawn';
-  if (h >= 8 && h < 12) return 'morning';
-  if (h >= 12 && h < 17) return 'afternoon';
-  if (h >= 17 && h < 21) return 'evening';
-  return 'night';
-}
-
-export function getAtmosphere(date: Date = new Date()): Atmosphere {
-  return ATMOSPHERES[getDayPhase(date)];
-}
+// Red does not exist in this product. Not for errors, not for lapses,
+// not for destructive actions. If you're reaching for a color to signal
+// "wrong" or "bad," reach for `chhai` + an explicit label instead.
 
 export const Spacing = {
   xs: 4,
@@ -150,51 +67,97 @@ export const Radius = {
 };
 
 export const FontSize = {
-  xs: 11,
-  sm: 13,
-  base: 15,
-  md: 17,
-  lg: 20,
-  xl: 24,
-  xxl: 30,
-  xxxl: 38,
-  display: 52,
+  xs: 12,
+  sm: 14,
+  base: 16,
+  md: 18,
+  lg: 22,
+  xl: 26,
+  xxl: 32,
+  xxxl: 40,
+  display: 48,
+};
+
+// Devanagari and Bengali need materially more line-height than Latin at the
+// same point size (matras and conjunct stacks collide otherwise). Multiply
+// FontSize by the value for the active script when setting lineHeight.
+export const LineHeightMultiplier: Record<'latin' | 'devanagari' | 'bengali', number> = {
+  latin: 1.35,
+  devanagari: 1.6,
+  bengali: 1.6,
 };
 
 export const FontFamily = {
+  // Body & UI — humanist faces designed for these scripts
   regular: 'NotoSans_400Regular',
   medium: 'NotoSans_500Medium',
   semiBold: 'NotoSans_600SemiBold',
   bold: 'NotoSans_700Bold',
-};
+  bodyDevanagari: 'NotoSansDevanagari_400Regular',
+  bodyDevanagariMedium: 'NotoSansDevanagari_500Medium',
+  bodyDevanagariSemiBold: 'NotoSansDevanagari_600SemiBold',
+  bodyBengali: 'NotoSansBengali_400Regular',
+  bodyBengaliMedium: 'NotoSansBengali_500Medium',
+  bodyBengaliSemiBold: 'NotoSansBengali_600SemiBold',
+
+  // Display — one-line emotional statements only, never UI chrome
+  displayLatin: 'TiroDevanagariHindi_400Regular', // placeholder metrics; Latin falls back to system serif feel via regular weight below if unavailable
+  displayDevanagari: 'TiroDevanagariHindi_400Regular',
+  displayBengali: 'TiroBangla_400Regular',
+
+  // Utility — timers and durations only
+  mono: 'IBMPlexMono_500Medium',
+  monoRegular: 'IBMPlexMono_400Regular',
+} as const;
 
 export const Shadow = {
   sm: {
-    shadowColor: '#2DD4BF',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
     elevation: 2,
   },
   md: {
-    shadowColor: '#2DD4BF',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  lg: {
-    shadowColor: '#2DD4BF',
-    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.22,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowRadius: 14,
+    elevation: 6,
   },
 };
 
-export const Duration = {
-  fast: 150,
-  normal: 300,
-  slow: 500,
-  breath: 4000,
-};
+// ── Motion tokens — Motion & Design System doc §2 ────────────────────────────
+// Wrap every duration/easing reference behind these tokens so an upstream
+// (Reanimated/M3) API change is a one-file edit.
+
+export const MotionDuration = {
+  instant: 50,
+  quick: 150,
+  brisk: 250,
+  settled: 400, // default screen transition
+  deliberate: 600, // entering urge mode, lapse acknowledgement
+  ceremonial: 900, // milestone, thread growth, exiting urge mode
+  ambient: 4000, // breath cycle, tide drift, background
+} as const;
+
+// Spring configs shaped for react-native-reanimated's withSpring.
+// damping/stiffness translated to reanimated's mass/damping/stiffness model.
+export const MotionSpring = {
+  gentle: { damping: 18, stiffness: 200, mass: 1 }, // default — no overshoot
+  settle: { damping: 20, stiffness: 300, mass: 1 }, // sheets, cards arriving
+  bead: { damping: 12, stiffness: 260, mass: 1 }, // Thread bead landing — the only bounce
+} as const;
+
+// ── Time-of-day is used only for locale/crisis-hour logic, never for palette
+// drift (Dhruv is dark-first year round; no "living background" mood engine).
+export type DayPhase = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
+
+export function getDayPhase(date: Date = new Date()): DayPhase {
+  const h = date.getHours();
+  if (h >= 5 && h < 8) return 'dawn';
+  if (h >= 8 && h < 12) return 'morning';
+  if (h >= 12 && h < 17) return 'afternoon';
+  if (h >= 17 && h < 21) return 'evening';
+  return 'night';
+}

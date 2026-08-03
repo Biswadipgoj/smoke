@@ -1,1091 +1,335 @@
 // src/constants/translations.ts
+// Copy for Dhruv. Register: plain, adult, warm, unhurried. No exclamation
+// marks except genuine celebration. Never "failed," never "streak," never a
+// zeroing counter (master doc §3.4). hi/bn are best-effort spoken-register
+// drafts — ship-blocking safety copy (crisis, alcohol gate) MUST be reviewed
+// by a native speaker with lived-experience sensitivity before release
+// (master doc §13.1); do not treat these strings as final for that reason.
+
 export type Locale = 'en' | 'hi' | 'bn';
-
-export type TranslationKeys = {
-  // Common
-  appName: string;
-  loading: string;
-  skip: string;
-  next: string;
-  done: string;
-  cancel: string;
-  save: string;
-  delete: string;
-  confirm: string;
-  back: string;
-  or: string;
-
-  // Tab labels
-  tabHome: string;
-  tabCoach: string;
-  tabProgress: string;
-  tabAchievements: string;
-  tabSettings: string;
-
-  // Home
-  homeGreetingMorning: string;
-  homeGreetingAfternoon: string;
-  homeGreetingEvening: string;
-  homeGreetingNight: string;
-  homeCravingBtn: string;
-  homeLogCig: string;
-  homeTodayCount: string;
-  homeBaselineCount: string;
-  homeMoneySaved: string;
-  homeMoneyToday: string;
-  homeStreakCurrent: string;
-  homeStreakBest: string;
-  homeStreakDays: string;
-  homeStreakDay: string;
-  homeNudgeDefault: string;
-  homeNudgeMorning: string;
-  homeNudgeEvening: string;
-
-  // Log Cigarette
-  logTitle: string;
-  logContextQuestion: string;
-  logContextStress: string;
-  logContextSocial: string;
-  logContextHabit: string;
-  logContextBoredom: string;
-  logContextAlcohol: string;
-  logContextOther: string;
-  logNote: string;
-  logNotePlaceholder: string;
-  logSubmit: string;
-  loggedSuccess: string;
-  loggedMessage: string;
-
-  // Delay Session
-  delayTitle: string;
-  delaySubtitle: string;
-  delayIntensityLabel: string;
-  delayContextLabel: string;
-  delayStartBtn: string;
-  delayInhale: string;
-  delayHold: string;
-  delayExhale: string;
-  delayTimeLeft: string;
-  delayMinutes: string;
-  delaySeconds: string;
-  delayAiMessage1: string;
-  delayAiMessage2: string;
-  delayAiMessage3: string;
-  delayAiMessage4: string;
-  delayAiMessage5: string;
-  delayOutcomeTitle: string;
-  delayOutcomeSuccess: string;
-  delayOutcomeSmoked: string;
-  delayOutcomeSuccessMsg: string;
-  delayOutcomeSmokedMsg: string;
-  delayEndEarly: string;
-
-  // Coach
-  coachTitle: string;
-  coachInputPlaceholder: string;
-  coachSend: string;
-  coachQuick1: string;
-  coachQuick2: string;
-  coachQuick3: string;
-  coachQuick4: string;
-  coachDisclaimer: string;
-  coachCrisisMsg: string;
-  coachCrisisResources: string;
-  coachTyping: string;
-  coachOffline: string;
-
-  // Progress
-  progressTitle: string;
-  progressHealthTitle: string;
-  progressMoneyTitle: string;
-  progressMoneySaved: string;
-  progressMoneyProjected: string;
-  progressPatternsTitle: string;
-  progressCigsPerDay: string;
-  progressDaysTracked: string;
-  progressFreeTime: string;
-  progressAchieved: string;
-  progressUpcoming: string;
-
-  // Health milestones
-  milestone20min: string;
-  milestone12hr: string;
-  milestone24hr: string;
-  milestone48hr: string;
-  milestone1week: string;
-  milestone1month: string;
-  milestone3months: string;
-  milestone6months: string;
-  milestone1year: string;
-  milestone5years: string;
-  milestone10years: string;
-  milestone20minDesc: string;
-  milestone12hrDesc: string;
-  milestone24hrDesc: string;
-  milestone48hrDesc: string;
-  milestone1weekDesc: string;
-  milestone1monthDesc: string;
-  milestone3monthsDesc: string;
-  milestone6monthsDesc: string;
-  milestone1yearDesc: string;
-  milestone5yearsDesc: string;
-  milestone10yearsDesc: string;
-
-  // Achievements
-  achievementsTitle: string;
-  achievementEarned: string;
-  achievementUpcoming: string;
-  achievementFirstDelay: string;
-  achievementFirstDelayDesc: string;
-  achievement5Delays: string;
-  achievement5DelaysDesc: string;
-  achievement7DayStreak: string;
-  achievement7DayStreakDesc: string;
-  achievement30DayStreak: string;
-  achievement30DayStreakDesc: string;
-  achievementFirstLog: string;
-  achievementFirstLogDesc: string;
-  achievement100Saved: string;
-  achievement100SavedDesc: string;
-  achievementOneWeekFree: string;
-  achievementOneWeekFreeDesc: string;
-
-  // Onboarding
-  onboardingWelcomeTitle: string;
-  onboardingWelcomeSubtitle: string;
-  onboardingWelcomeBtn: string;
-  onboardingGuestBtn: string;
-  onboardingLangTitle: string;
-  onboardingLangSubtitle: string;
-  onboardingBaselineTitle: string;
-  onboardingBaselineSubtitle: string;
-  onboardingDailyCount: string;
-  onboardingDailyCountPlaceholder: string;
-  onboardingCostPerPack: string;
-  onboardingCostPlaceholder: string;
-  onboardingCigsPerPack: string;
-  onboardingCurrency: string;
-  onboardingMotivationTitle: string;
-  onboardingMotivationSubtitle: string;
-  onboardingMotivFamily: string;
-  onboardingMotivHealth: string;
-  onboardingMotivMoney: string;
-  onboardingMotivFeel: string;
-  onboardingMotivOther: string;
-  onboardingGoalTitle: string;
-  onboardingGoalSubtitle: string;
-  onboardingGoalQuit: string;
-  onboardingGoalQuitDesc: string;
-  onboardingGoalReduce: string;
-  onboardingGoalReduceDesc: string;
-  onboardingGoalTrack: string;
-  onboardingGoalTrackDesc: string;
-  onboardingDone: string;
-
-  // Settings
-  settingsTitle: string;
-  settingsLanguage: string;
-  settingsTheme: string;
-  settingsThemeDark: string;
-  settingsThemeLight: string;
-  settingsThemeSystem: string;
-  settingsNotifications: string;
-  settingsNotificationsOn: string;
-  settingsNotificationsOff: string;
-  settingsAccount: string;
-  settingsExport: string;
-  settingsDelete: string;
-  settingsDeleteConfirm: string;
-  settingsDeleteWarning: string;
-  settingsCrisis: string;
-  settingsAbout: string;
-  settingsVersion: string;
-
-  // Auth
-  authLoginTitle: string;
-  authEmail: string;
-  authPassword: string;
-  authLogin: string;
-  authSignup: string;
-  authGoogle: string;
-  authMagicLink: string;
-  authNoAccount: string;
-  authHaveAccount: string;
-  authForgotPassword: string;
-  authGuestNote: string;
-  authEmailSent: string;
-
-  // Errors
-  errorGeneric: string;
-  errorNetwork: string;
-  errorAuth: string;
-  errorSync: string;
-
-  // Companion / personas
-  companionWord: string;
-  personaMentor: string;
-  personaMentorTagline: string;
-  personaFriend: string;
-  personaFriendTagline: string;
-  personaGuide: string;
-  personaGuideTagline: string;
-  onboardingPersonaTitle: string;
-  onboardingPersonaSubtitle: string;
-  settingsCompanion: string;
-
-  // Home — data as narrative
-  homeStorySectionTitle: string;
-  homeCleanAirTitle: string;
-  homeCleanAirCaption: string;
-  homeAvoidedTitle: string;
-  homeAvoidedCaption: string;
-  homeLifeTitle: string;
-  homeLifeCaption: string;
-  homeMoneyPrefix: string;
-  moneyStoryStart: string;
-  moneyStoryCoffee: string;
-  moneyStoryMeal: string;
-  moneyStoryDinner: string;
-  moneyStoryTreat: string;
-  moneyStoryGetaway: string;
-  unitMin: string;
-
-  // Coach empty state
-  coachEmptyTitle: string;
-  coachEmptySubtitle: string;
-
-  // Intervention hub
-  interveneTitle: string;
-  interveneSubtitle: string;
-  interveneCalming: string;
-  interveneCalmingDesc: string;
-  interveneCognitive: string;
-  interveneCognitiveDesc: string;
-  interveneIncentive: string;
-  interveneIncentiveDesc: string;
-  intervenePhysical: string;
-  intervenePhysicalDesc: string;
-  interveneDistraction: string;
-  interveneDistractionDesc: string;
-  interveneChooseAnother: string;
-  interveneReflectDone: string;
-  cognitiveIntro: string;
-  cognitivePrompt1: string;
-  cognitivePrompt2: string;
-  cognitivePrompt3: string;
-  physicalIntro: string;
-  physicalStep1: string;
-  physicalStep2: string;
-  physicalStep3: string;
-  distractionIntro: string;
-  distractionTask1: string;
-  distractionTask2: string;
-  distractionTask3: string;
-  incentiveIntro: string;
-};
-
-const en: TranslationKeys = {
-  appName: 'SmokeLess AI',
-  loading: 'Loading...',
-  skip: 'Skip for now',
-  next: 'Continue',
-  done: 'Done',
-  cancel: 'Cancel',
-  save: 'Save',
-  delete: 'Delete',
-  confirm: 'Confirm',
-  back: 'Back',
-  or: 'or',
-
-  tabHome: 'Today',
-  tabCoach: 'Coach',
-  tabProgress: 'Progress',
-  tabAchievements: 'Milestones',
-  tabSettings: 'Settings',
-
-  homeGreetingMorning: 'Good morning',
-  homeGreetingAfternoon: 'Good afternoon',
-  homeGreetingEvening: 'Good evening',
-  homeGreetingNight: 'Still up?',
-  homeCravingBtn: "I'm craving",
-  homeLogCig: 'Log a cigarette',
-  homeTodayCount: "Today's cigarettes",
-  homeBaselineCount: 'Your baseline',
-  homeMoneySaved: 'Money saved',
-  homeMoneyToday: 'today',
-  homeStreakCurrent: 'Current streak',
-  homeStreakBest: 'Best ever',
-  homeStreakDays: 'days',
-  homeStreakDay: 'day',
-  homeNudgeDefault: 'Every craving you delay is a victory — even the small ones.',
-  homeNudgeMorning: 'Starting the morning smoke-free is one of the best things you can do today.',
-  homeNudgeEvening: "You've made it through most of the day. The evening stretch is the final push.",
-
-  logTitle: 'Log a Cigarette',
-  logContextQuestion: 'What brought this on? (optional)',
-  logContextStress: 'Stress',
-  logContextSocial: 'Social',
-  logContextHabit: 'Habit',
-  logContextBoredom: 'Boredom',
-  logContextAlcohol: 'Alcohol',
-  logContextOther: 'Other',
-  logNote: 'Note',
-  logNotePlaceholder: 'Anything else going on? (optional)',
-  logSubmit: 'Log it',
-  loggedSuccess: 'Logged',
-  loggedMessage: "Honest tracking is how progress works. You're doing it right.",
-
-  delayTitle: 'Urge Delay Session',
-  delaySubtitle: 'Let the craving pass — it usually takes just a few minutes.',
-  delayIntensityLabel: 'How strong is the urge?',
-  delayContextLabel: "What's going on?",
-  delayStartBtn: 'Start session',
-  delayInhale: 'Breathe in',
-  delayHold: 'Hold',
-  delayExhale: 'Breathe out',
-  delayTimeLeft: 'remaining',
-  delayMinutes: 'min',
-  delaySeconds: 'sec',
-  delayAiMessage1: 'Cravings peak and pass, usually within 3–5 minutes. You are already through the hardest part.',
-  delayAiMessage2: 'Notice the urge without fighting it. You are the observer, not the craving.',
-  delayAiMessage3: 'Your body is healing every minute. This moment of delay is meaningful.',
-  delayAiMessage4: 'One breath at a time. You do not need to quit forever right now — just for this moment.',
-  delayAiMessage5: 'You have gotten through cravings before. This one will pass too.',
-  delayOutcomeTitle: 'Session complete',
-  delayOutcomeSuccess: 'I made it through ✨',
-  delayOutcomeSmoked: 'I smoked anyway — that\'s okay',
-  delayOutcomeSuccessMsg: 'That was real progress. Each delay rewires the pattern a little.',
-  delayOutcomeSmokedMsg: "Smoking after a craving delay still reduced the total. That counts. Tomorrow is another chance.",
-  delayEndEarly: 'End session',
-
-  coachTitle: 'Your Coach',
-  coachInputPlaceholder: 'Talk to your coach...',
-  coachSend: 'Send',
-  coachQuick1: 'Help me through a craving',
-  coachQuick2: 'I just slipped up',
-  coachQuick3: "How am I doing?",
-  coachQuick4: "I'm stressed and want to smoke",
-  coachDisclaimer: 'SmokeLess AI is a behavioral support tool, not a medical service. For health emergencies, contact a professional.',
-  coachCrisisMsg: "I hear that you're struggling. Please know you're not alone. If you're having thoughts of harming yourself, please reach out to a crisis line immediately.",
-  coachCrisisResources: 'Crisis Resources: iCall India: 9152987821 | Vandrevala Foundation: 1860-2662-345',
-  coachTyping: 'Coach is thinking...',
-  coachOffline: "I'm having trouble connecting right now. Here's something to remember: this craving will pass. Take 3 slow breaths and notice the feeling without acting on it.",
-
-  progressTitle: 'Your Progress',
-  progressHealthTitle: 'Health Recovery',
-  progressMoneyTitle: 'Money Saved',
-  progressMoneySaved: 'Total saved',
-  progressMoneyProjected: 'Projected yearly savings',
-  progressPatternsTitle: 'Patterns',
-  progressCigsPerDay: 'avg per day',
-  progressDaysTracked: 'days tracked',
-  progressFreeTime: 'delay sessions',
-  progressAchieved: 'Achieved',
-  progressUpcoming: 'Upcoming',
-
-  milestone20min: '20 Minutes',
-  milestone12hr: '12 Hours',
-  milestone24hr: '24 Hours',
-  milestone48hr: '48 Hours',
-  milestone1week: '1 Week',
-  milestone1month: '1 Month',
-  milestone3months: '3 Months',
-  milestone6months: '6 Months',
-  milestone1year: '1 Year',
-  milestone5years: '5 Years',
-  milestone10years: '10 Years',
-  milestone20minDesc: 'Heart rate and blood pressure begin to drop toward normal levels.',
-  milestone12hrDesc: 'Carbon monoxide in your blood returns to normal, and oxygen levels rise.',
-  milestone24hrDesc: 'Your heart attack risk already begins to decrease.',
-  milestone48hrDesc: 'Nerve endings begin to regrow. Your sense of smell and taste start improving.',
-  milestone1weekDesc: 'Circulation improves and lung function increases noticeably.',
-  milestone1monthDesc: 'Coughing and shortness of breath decrease. Cilia in the lungs begin to regain normal function.',
-  milestone3monthsDesc: 'Lung function continues to improve. Your risk of infection decreases.',
-  milestone6monthsDesc: 'Many people notice significantly improved energy and breathing.',
-  milestone1yearDesc: 'Your risk of coronary heart disease is now half that of someone who still smokes.',
-  milestone5yearsDesc: 'Your stroke risk is now similar to that of a non-smoker.',
-  milestone10yearsDesc: 'Your risk of lung cancer is about half that of someone who still smokes.',
-
-  achievementsTitle: 'Milestones',
-  achievementEarned: 'Earned',
-  achievementUpcoming: 'Keep going',
-  achievementFirstDelay: 'First Delay',
-  achievementFirstDelayDesc: 'Completed your first urge delay session.',
-  achievement5Delays: 'Delay Champion',
-  achievement5DelaysDesc: 'Completed 5 urge delay sessions.',
-  achievement7DayStreak: 'One Week Strong',
-  achievement7DayStreakDesc: 'Maintained a 7-day smoke-free streak.',
-  achievement30DayStreak: 'Monthly Milestone',
-  achievement30DayStreakDesc: 'A full month of your journey. Remarkable.',
-  achievementFirstLog: 'Honest Tracker',
-  achievementFirstLogDesc: 'Logged your first entry. Honest data is the foundation of change.',
-  achievement100Saved: '₹100 Saved',
-  achievement100SavedDesc: "You've saved your first ₹100. Small wins add up.",
-  achievementOneWeekFree: 'Week Free',
-  achievementOneWeekFreeDesc: 'Seven smoke-free days. Your lungs are already noticing.',
-
-  onboardingWelcomeTitle: 'Welcome to SmokeLess AI',
-  onboardingWelcomeSubtitle: "Your calm, non-judgmental coach for reducing smoking — one moment at a time.",
-  onboardingWelcomeBtn: 'Get started',
-  onboardingGuestBtn: 'Try without an account',
-  onboardingLangTitle: 'Choose your language',
-  onboardingLangSubtitle: 'All coaching, notifications and reports will be in your selected language.',
-  onboardingBaselineTitle: 'Your starting point',
-  onboardingBaselineSubtitle: "This helps us track your progress accurately. You can update it any time.",
-  onboardingDailyCount: 'Cigarettes per day (roughly)',
-  onboardingDailyCountPlaceholder: 'e.g. 10',
-  onboardingCostPerPack: 'Cost per pack',
-  onboardingCostPlaceholder: 'e.g. 250',
-  onboardingCigsPerPack: 'Cigarettes per pack',
-  onboardingCurrency: 'Currency (₹, $, €...)',
-  onboardingMotivationTitle: "What's driving you?",
-  onboardingMotivationSubtitle: 'Choose as many as feel true — no wrong answers.',
-  onboardingMotivFamily: 'My family',
-  onboardingMotivHealth: 'My health',
-  onboardingMotivMoney: 'Save money',
-  onboardingMotivFeel: 'Feel better',
-  onboardingMotivOther: 'My own reasons',
-  onboardingGoalTitle: 'How do you want to approach this?',
-  onboardingGoalSubtitle: "There's no single right path. Pick what feels honest.",
-  onboardingGoalQuit: 'Quit completely',
-  onboardingGoalQuitDesc: 'Working toward full cessation',
-  onboardingGoalReduce: 'Reduce gradually',
-  onboardingGoalReduceDesc: 'Cut down at my own pace',
-  onboardingGoalTrack: 'Just track for now',
-  onboardingGoalTrackDesc: "Understand my patterns first",
-  onboardingDone: "Let's begin",
-
-  settingsTitle: 'Settings',
-  settingsLanguage: 'Language',
-  settingsTheme: 'Appearance',
-  settingsThemeDark: 'Dark',
-  settingsThemeLight: 'Light',
-  settingsThemeSystem: 'Follow system',
-  settingsNotifications: 'Notifications',
-  settingsNotificationsOn: 'On',
-  settingsNotificationsOff: 'Off',
-  settingsAccount: 'Account & Security',
-  settingsExport: 'Export my data',
-  settingsDelete: 'Delete account',
-  settingsDeleteConfirm: 'Are you sure? This permanently deletes all your data.',
-  settingsDeleteWarning: 'This cannot be undone.',
-  settingsCrisis: 'Crisis resources',
-  settingsAbout: 'About SmokeLess AI',
-  settingsVersion: 'Version',
-
-  authLoginTitle: 'Sign in',
-  authEmail: 'Email address',
-  authPassword: 'Password',
-  authLogin: 'Sign in',
-  authSignup: 'Create account',
-  authGoogle: 'Continue with Google',
-  authMagicLink: 'Send magic link',
-  authNoAccount: "Don't have an account?",
-  authHaveAccount: 'Already have an account?',
-  authForgotPassword: 'Forgot password?',
-  authGuestNote: "Guest data is stored on this device only. Create an account to back it up.",
-  authEmailSent: 'Check your email — we sent you a sign-in link.',
-
-  errorGeneric: 'Something went wrong. Please try again.',
-  errorNetwork: "Something didn't sync — we'll retry automatically.",
-  errorAuth: 'Sign in failed. Please check your details.',
-  errorSync: 'Could not save right now — queued for retry.',
-
-  companionWord: 'companion',
-  personaMentor: 'Wise Mentor',
-  personaMentorTagline: 'Grounded and insightful — speaks with quiet wisdom.',
-  personaFriend: 'Friend',
-  personaFriendTagline: 'Warm and casual — celebrates every win with you.',
-  personaGuide: 'Calm Guide',
-  personaGuideTagline: 'Gentle and present, like a slow, steady breath.',
-  onboardingPersonaTitle: 'Choose your companion',
-  onboardingPersonaSubtitle: "They'll walk this journey with you. You can change them any time.",
-  settingsCompanion: 'Your companion',
-
-  homeStorySectionTitle: 'Your story so far',
-  homeCleanAirTitle: 'Clean breathing',
-  homeCleanAirCaption: 'minutes of easier breaths reclaimed',
-  homeAvoidedTitle: 'Not smoked',
-  homeAvoidedCaption: "cigarettes you chose not to light",
-  homeLifeTitle: 'Life regained',
-  homeLifeCaption: 'estimated minutes returned to you',
-  homeMoneyPrefix: "That's enough for",
-  moneyStoryStart: 'a small treat, very soon',
-  moneyStoryCoffee: 'a good cup of coffee',
-  moneyStoryMeal: 'a proper meal out',
-  moneyStoryDinner: 'a celebratory dinner',
-  moneyStoryTreat: 'a gift for someone you love',
-  moneyStoryGetaway: 'a little weekend getaway',
-  unitMin: 'min',
-
-  coachEmptyTitle: "I'm here with you",
-  coachEmptySubtitle: "I know your progress, your triggers, and your wins. Tell me what's on your mind — no judgment, ever.",
-
-  interveneTitle: 'Ride the wave',
-  interveneSubtitle: 'A craving is a wave — it rises, crests, and always falls. Pick what you need right now.',
-  interveneCalming: 'Breathe',
-  interveneCalmingDesc: 'A guided breathing space to settle your body.',
-  interveneCognitive: 'Future self',
-  interveneCognitiveDesc: 'Reconnect with the reason you started.',
-  interveneIncentive: 'See your wins',
-  interveneIncentiveDesc: 'Watch what your progress is already buying back.',
-  intervenePhysical: 'Reset your body',
-  intervenePhysicalDesc: 'Small physical actions that ease the urge.',
-  interveneDistraction: 'Shift focus',
-  interveneDistractionDesc: 'A tiny challenge to let the wave pass.',
-  interveneChooseAnother: 'Choose something else',
-  interveneReflectDone: 'I feel steadier now',
-  cognitiveIntro: 'Take a slow breath and sit with one of these:',
-  cognitivePrompt1: 'Picture yourself a year from now, breathing easily on a morning walk. What does that version of you feel?',
-  cognitivePrompt2: 'Remember why you started. Who — or what — are you doing this for?',
-  cognitivePrompt3: 'This craving passes whether you smoke or not. What would the you-you-want-to-be choose right now?',
-  physicalIntro: 'Cravings live in the body. Move through these three:',
-  physicalStep1: 'Drink a full glass of water, slowly.',
-  physicalStep2: 'Stand and stretch your arms overhead for 20 seconds.',
-  physicalStep3: 'Roll your shoulders back five times and unclench your jaw.',
-  distractionIntro: 'Give your mind a small, absorbing task for two minutes:',
-  distractionTask1: 'Name five things you can see, four you can hear, three you can touch.',
-  distractionTask2: 'Count backwards from 100 in sevens: 100, 93, 86…',
-  distractionTask3: 'Send someone you care about a single kind sentence.',
-  incentiveIntro: 'Every craving you ride is already paying off:',
-};
-
-const hi: TranslationKeys = {
-  appName: 'SmokeLess AI',
-  loading: 'लोड हो रहा है...',
-  skip: 'अभी छोड़ें',
-  next: 'जारी रखें',
-  done: 'हो गया',
-  cancel: 'रद्द करें',
-  save: 'सहेजें',
-  delete: 'हटाएं',
-  confirm: 'पुष्टि करें',
-  back: 'वापस',
-  or: 'या',
-
-  tabHome: 'आज',
-  tabCoach: 'कोच',
-  tabProgress: 'प्रगति',
-  tabAchievements: 'उपलब्धियां',
-  tabSettings: 'सेटिंग्स',
-
-  homeGreetingMorning: 'सुप्रभात',
-  homeGreetingAfternoon: 'नमस्कार',
-  homeGreetingEvening: 'शुभ संध्या',
-  homeGreetingNight: 'अभी भी जाग रहे हैं?',
-  homeCravingBtn: 'तलब लग रही है',
-  homeLogCig: 'सिगरेट नोट करें',
-  homeTodayCount: 'आज की सिगरेट',
-  homeBaselineCount: 'आपकी आधार रेखा',
-  homeMoneySaved: 'बचाया पैसा',
-  homeMoneyToday: 'आज',
-  homeStreakCurrent: 'वर्तमान स्ट्रीक',
-  homeStreakBest: 'सबसे अच्छा',
-  homeStreakDays: 'दिन',
-  homeStreakDay: 'दिन',
-  homeNudgeDefault: 'हर तलब जो आप टालते हैं वह एक जीत है — चाहे छोटी हो।',
-  homeNudgeMorning: 'बिना सिगरेट के सुबह शुरू करना आज का सबसे अच्छा काम है।',
-  homeNudgeEvening: 'आप लगभग पूरे दिन से गुजर चुके हैं। शाम का समय आखिरी कदम है।',
-
-  logTitle: 'सिगरेट नोट करें',
-  logContextQuestion: 'इसकी वजह क्या रही? (वैकल्पिक)',
-  logContextStress: 'तनाव',
-  logContextSocial: 'दोस्तों के साथ',
-  logContextHabit: 'आदत',
-  logContextBoredom: 'बोरियत',
-  logContextAlcohol: 'शराब के साथ',
-  logContextOther: 'अन्य',
-  logNote: 'नोट',
-  logNotePlaceholder: 'कुछ और जोड़ना चाहते हैं? (वैकल्पिक)',
-  logSubmit: 'नोट करें',
-  loggedSuccess: 'दर्ज हो गया',
-  loggedMessage: 'ईमानदारी से नोट करना ही प्रगति का तरीका है। आप सही कर रहे हैं।',
-
-  delayTitle: 'तलब देरी सत्र',
-  delaySubtitle: 'तलब को गुजरने दें — यह आमतौर पर कुछ ही मिनटों में होती है।',
-  delayIntensityLabel: 'तलब कितनी तेज है?',
-  delayContextLabel: 'क्या हो रहा है?',
-  delayStartBtn: 'सत्र शुरू करें',
-  delayInhale: 'सांस लें',
-  delayHold: 'रोकें',
-  delayExhale: 'सांस छोड़ें',
-  delayTimeLeft: 'शेष',
-  delayMinutes: 'मिनट',
-  delaySeconds: 'सेकंड',
-  delayAiMessage1: 'तलब 3-5 मिनट में अपने आप गुजर जाती है। आप पहले से ही सबसे कठिन हिस्से से गुजर चुके हैं।',
-  delayAiMessage2: 'तलब को देखें, उससे लड़ें नहीं। आप देखने वाले हैं, तलब नहीं।',
-  delayAiMessage3: 'आपका शरीर हर मिनट ठीक हो रहा है। यह देरी का पल मायने रखती है।',
-  delayAiMessage4: 'एक-एक सांस। आपको अभी हमेशा के लिए छोड़ने की जरूरत नहीं — बस इस पल के लिए।',
-  delayAiMessage5: 'आप पहले भी तलब से गुजर चुके हैं। यह भी गुजर जाएगी।',
-  delayOutcomeTitle: 'सत्र पूरा हुआ',
-  delayOutcomeSuccess: 'मैं कर गया ✨',
-  delayOutcomeSmoked: 'मैंने फिर भी पी — कोई बात नहीं',
-  delayOutcomeSuccessMsg: 'यह सच्ची प्रगति थी। हर देरी पैटर्न को थोड़ा बदलती है।',
-  delayOutcomeSmokedMsg: 'तलब के बाद सिगरेट पीने से भी कुल संख्या कम हुई। यह भी मायने रखता है।',
-  delayEndEarly: 'सत्र समाप्त करें',
-
-  coachTitle: 'आपका कोच',
-  coachInputPlaceholder: 'अपने कोच से बात करें...',
-  coachSend: 'भेजें',
-  coachQuick1: 'तलब से गुजरने में मदद करें',
-  coachQuick2: 'मैं थोड़ा फिसल गया',
-  coachQuick3: 'मैं कैसा कर रहा हूं?',
-  coachQuick4: 'मुझे तनाव है और सिगरेट पीना चाहता हूं',
-  coachDisclaimer: 'SmokeLess AI एक व्यवहार सहायता उपकरण है, चिकित्सा सेवा नहीं। स्वास्थ्य आपातकाल में किसी पेशेवर से संपर्क करें।',
-  coachCrisisMsg: 'मैं समझता हूं कि आप संघर्ष कर रहे हैं। आप अकेले नहीं हैं। अगर आप खुद को नुकसान पहुंचाने के बारे में सोच रहे हैं, तो कृपया तुरंत किसी संकट हेल्पलाइन से संपर्क करें।',
-  coachCrisisResources: 'संकट सहायता: iCall: 9152987821 | Vandrevala Foundation: 1860-2662-345',
-  coachTyping: 'कोच सोच रहा है...',
-  coachOffline: 'अभी कनेक्ट करने में समस्या है। याद रखें: यह तलब गुजर जाएगी। 3 धीमी सांसें लें।',
-
-  progressTitle: 'आपकी प्रगति',
-  progressHealthTitle: 'स्वास्थ्य सुधार',
-  progressMoneyTitle: 'बचाया पैसा',
-  progressMoneySaved: 'कुल बचत',
-  progressMoneyProjected: 'वार्षिक बचत का अनुमान',
-  progressPatternsTitle: 'पैटर्न',
-  progressCigsPerDay: 'प्रति दिन औसत',
-  progressDaysTracked: 'दिन ट्रैक किए',
-  progressFreeTime: 'देरी सत्र',
-  progressAchieved: 'प्राप्त',
-  progressUpcoming: 'आगामी',
-
-  milestone20min: '20 मिनट',
-  milestone12hr: '12 घंटे',
-  milestone24hr: '24 घंटे',
-  milestone48hr: '48 घंटे',
-  milestone1week: '1 सप्ताह',
-  milestone1month: '1 महीना',
-  milestone3months: '3 महीने',
-  milestone6months: '6 महीने',
-  milestone1year: '1 साल',
-  milestone5years: '5 साल',
-  milestone10years: '10 साल',
-  milestone20minDesc: 'हृदय गति और रक्तचाप सामान्य स्तर की ओर कम होने लगते हैं।',
-  milestone12hrDesc: 'रक्त में कार्बन मोनोऑक्साइड सामान्य हो जाती है, ऑक्सीजन का स्तर बढ़ता है।',
-  milestone24hrDesc: 'दिल के दौरे का जोखिम कम होने लगता है।',
-  milestone48hrDesc: 'तंत्रिका अंत फिर से बढ़ने लगते हैं। गंध और स्वाद में सुधार शुरू होता है।',
-  milestone1weekDesc: 'रक्त परिसंचरण में सुधार और फेफड़ों की क्षमता बढ़ती है।',
-  milestone1monthDesc: 'खांसी और सांस की तकलीफ कम होती है। फेफड़ों में सिलिया सामान्य काम करने लगती है।',
-  milestone3monthsDesc: 'फेफड़ों की कार्यक्षमता में सुधार जारी रहता है। संक्रमण का जोखिम कम होता है।',
-  milestone6monthsDesc: 'कई लोगों को ऊर्जा और सांस लेने में उल्लेखनीय सुधार दिखता है।',
-  milestone1yearDesc: 'हृदय रोग का जोखिम धूम्रपान करने वाले की तुलना में आधा हो जाता है।',
-  milestone5yearsDesc: 'स्ट्रोक का जोखिम अब धूम्रपान न करने वाले के समान है।',
-  milestone10yearsDesc: 'फेफड़ों के कैंसर का जोखिम अब धूम्रपान करने वाले की तुलना में लगभग आधा है।',
-
-  achievementsTitle: 'उपलब्धियां',
-  achievementEarned: 'अर्जित',
-  achievementUpcoming: 'आगे बढ़ते रहें',
-  achievementFirstDelay: 'पहली देरी',
-  achievementFirstDelayDesc: 'अपना पहला तलब देरी सत्र पूरा किया।',
-  achievement5Delays: 'देरी चैंपियन',
-  achievement5DelaysDesc: '5 तलब देरी सत्र पूरे किए।',
-  achievement7DayStreak: 'एक सप्ताह मजबूत',
-  achievement7DayStreakDesc: '7 दिन का धूम्रपान-मुक्त स्ट्रीक।',
-  achievement30DayStreak: 'मासिक मील का पत्थर',
-  achievement30DayStreakDesc: 'एक पूरा महीना। उल्लेखनीय।',
-  achievementFirstLog: 'ईमानदार ट्रैकर',
-  achievementFirstLogDesc: 'पहली एंट्री नोट की। ईमानदारी बदलाव की नींव है।',
-  achievement100Saved: '₹100 बचाए',
-  achievement100SavedDesc: 'आपने पहले ₹100 बचाए। छोटी जीतें जुड़ती हैं।',
-  achievementOneWeekFree: 'एक सप्ताह मुक्त',
-  achievementOneWeekFreeDesc: 'सात धूम्रपान-मुक्त दिन। आपके फेफड़े पहले से नोटिस कर रहे हैं।',
-
-  onboardingWelcomeTitle: 'SmokeLess AI में स्वागत है',
-  onboardingWelcomeSubtitle: 'धूम्रपान कम करने के लिए आपका शांत, गैर-न्यायिक कोच — एक पल में।',
-  onboardingWelcomeBtn: 'शुरू करें',
-  onboardingGuestBtn: 'बिना अकाउंट के आज़माएं',
-  onboardingLangTitle: 'अपनी भाषा चुनें',
-  onboardingLangSubtitle: 'सभी कोचिंग, सूचनाएं और रिपोर्ट आपकी चुनी भाषा में होंगी।',
-  onboardingBaselineTitle: 'आपका शुरुआती बिंदु',
-  onboardingBaselineSubtitle: 'यह हमें आपकी प्रगति सटीक रूप से ट्रैक करने में मदद करता है।',
-  onboardingDailyCount: 'प्रति दिन सिगरेट (लगभग)',
-  onboardingDailyCountPlaceholder: 'जैसे 10',
-  onboardingCostPerPack: 'एक पैक की कीमत',
-  onboardingCostPlaceholder: 'जैसे 250',
-  onboardingCigsPerPack: 'पैक में सिगरेट',
-  onboardingCurrency: 'मुद्रा (₹, $, €...)',
-  onboardingMotivationTitle: 'आपको क्या प्रेरित करता है?',
-  onboardingMotivationSubtitle: 'जितने सच लगें उतने चुनें — कोई गलत जवाब नहीं।',
-  onboardingMotivFamily: 'मेरा परिवार',
-  onboardingMotivHealth: 'मेरा स्वास्थ्य',
-  onboardingMotivMoney: 'पैसे बचाना',
-  onboardingMotivFeel: 'बेहतर महसूस करना',
-  onboardingMotivOther: 'मेरे अपने कारण',
-  onboardingGoalTitle: 'आप इसे कैसे अपनाना चाहते हैं?',
-  onboardingGoalSubtitle: 'कोई एक सही रास्ता नहीं है। जो सच लगे वह चुनें।',
-  onboardingGoalQuit: 'पूरी तरह छोड़ना',
-  onboardingGoalQuitDesc: 'पूर्ण छोड़ने की दिशा में काम करना',
-  onboardingGoalReduce: 'धीरे-धीरे कम करना',
-  onboardingGoalReduceDesc: 'अपनी गति से कम करना',
-  onboardingGoalTrack: 'अभी सिर्फ ट्रैक करना',
-  onboardingGoalTrackDesc: 'पहले अपने पैटर्न समझना',
-  onboardingDone: 'चलिए शुरू करें',
-
-  settingsTitle: 'सेटिंग्स',
-  settingsLanguage: 'भाषा',
-  settingsTheme: 'स्वरूप',
-  settingsThemeDark: 'डार्क',
-  settingsThemeLight: 'लाइट',
-  settingsThemeSystem: 'सिस्टम अनुसार',
-  settingsNotifications: 'सूचनाएं',
-  settingsNotificationsOn: 'चालू',
-  settingsNotificationsOff: 'बंद',
-  settingsAccount: 'अकाउंट और सुरक्षा',
-  settingsExport: 'मेरा डेटा निर्यात करें',
-  settingsDelete: 'अकाउंट हटाएं',
-  settingsDeleteConfirm: 'क्या आप निश्चित हैं? यह आपका सारा डेटा स्थायी रूप से हटा देगा।',
-  settingsDeleteWarning: 'यह वापस नहीं किया जा सकता।',
-  settingsCrisis: 'संकट संसाधन',
-  settingsAbout: 'SmokeLess AI के बारे में',
-  settingsVersion: 'संस्करण',
-
-  authLoginTitle: 'साइन इन करें',
-  authEmail: 'ईमेल पता',
-  authPassword: 'पासवर्ड',
-  authLogin: 'साइन इन',
-  authSignup: 'अकाउंट बनाएं',
-  authGoogle: 'Google से जारी रखें',
-  authMagicLink: 'मैजिक लिंक भेजें',
-  authNoAccount: 'अकाउंट नहीं है?',
-  authHaveAccount: 'पहले से अकाउंट है?',
-  authForgotPassword: 'पासवर्ड भूल गए?',
-  authGuestNote: 'गेस्ट डेटा केवल इस डिवाइस पर है। बैकअप के लिए अकाउंट बनाएं।',
-  authEmailSent: 'अपना ईमेल देखें — हमने आपको साइन-इन लिंक भेजा है।',
-
-  errorGeneric: 'कुछ गलत हो गया। कृपया पुनः प्रयास करें।',
-  errorNetwork: 'कुछ सिंक नहीं हुआ — हम स्वचालित रूप से पुनः प्रयास करेंगे।',
-  errorAuth: 'साइन इन विफल। कृपया अपनी जानकारी जांचें।',
-  errorSync: 'अभी सेव नहीं हो सका — पुनः प्रयास के लिए कतार में है।',
-
-  companionWord: 'साथी',
-  personaMentor: 'बुद्धिमान मार्गदर्शक',
-  personaMentorTagline: 'गंभीर और अंतर्दृष्टिपूर्ण — शांत ज्ञान से बात करता है।',
-  personaFriend: 'दोस्त',
-  personaFriendTagline: 'गर्मजोश और सहज — हर जीत आपके साथ मनाता है।',
-  personaGuide: 'शांत गाइड',
-  personaGuideTagline: 'कोमल और मौजूद, एक धीमी, स्थिर सांस की तरह।',
-  onboardingPersonaTitle: 'अपना साथी चुनें',
-  onboardingPersonaSubtitle: 'वे इस सफर में आपके साथ चलेंगे। आप इन्हें कभी भी बदल सकते हैं।',
-  settingsCompanion: 'आपका साथी',
-
-  homeStorySectionTitle: 'अब तक की आपकी कहानी',
-  homeCleanAirTitle: 'साफ सांसें',
-  homeCleanAirCaption: 'आसान सांसों के वापस पाए मिनट',
-  homeAvoidedTitle: 'नहीं पी',
-  homeAvoidedCaption: 'सिगरेट जो आपने नहीं जलाईं',
-  homeLifeTitle: 'वापस पाया जीवन',
-  homeLifeCaption: 'अनुमानित मिनट जो आपको लौटे',
-  homeMoneyPrefix: 'यह काफी है',
-  moneyStoryStart: 'जल्द ही एक छोटी खुशी के लिए',
-  moneyStoryCoffee: 'एक अच्छी कॉफी के लिए',
-  moneyStoryMeal: 'बाहर एक अच्छे भोजन के लिए',
-  moneyStoryDinner: 'एक जश्न के डिनर के लिए',
-  moneyStoryTreat: 'किसी प्रिय के लिए तोहफे के लिए',
-  moneyStoryGetaway: 'एक छोटी वीकेंड सैर के लिए',
-  unitMin: 'मिनट',
-
-  coachEmptyTitle: 'मैं आपके साथ हूं',
-  coachEmptySubtitle: 'मुझे आपकी प्रगति, ट्रिगर और जीतें पता हैं। जो मन में है बताएं — कोई निर्णय नहीं, कभी नहीं।',
-
-  interveneTitle: 'लहर के साथ बहें',
-  interveneSubtitle: 'तलब एक लहर है — यह उठती है, चरम पर आती है और हमेशा गिरती है। अभी जो चाहिए वह चुनें।',
-  interveneCalming: 'सांस लें',
-  interveneCalmingDesc: 'शरीर को शांत करने के लिए निर्देशित सांस।',
-  interveneCognitive: 'भविष्य का मैं',
-  interveneCognitiveDesc: 'जिस कारण से शुरू किया उससे फिर जुड़ें।',
-  interveneIncentive: 'अपनी जीतें देखें',
-  interveneIncentiveDesc: 'देखें आपकी प्रगति क्या लौटा रही है।',
-  intervenePhysical: 'शरीर को रीसेट करें',
-  intervenePhysicalDesc: 'छोटे शारीरिक काम जो तलब कम करते हैं।',
-  interveneDistraction: 'ध्यान बदलें',
-  interveneDistractionDesc: 'लहर को गुजरने देने के लिए एक छोटी चुनौती।',
-  interveneChooseAnother: 'कुछ और चुनें',
-  interveneReflectDone: 'अब मैं ज्यादा स्थिर महसूस करता हूं',
-  cognitiveIntro: 'एक धीमी सांस लें और इनमें से किसी पर ठहरें:',
-  cognitivePrompt1: 'एक साल बाद खुद की कल्पना करें, सुबह की सैर में आसानी से सांस लेते हुए। वह आप कैसा महसूस करता है?',
-  cognitivePrompt2: 'याद करें आपने क्यों शुरू किया। किसके लिए कर रहे हैं?',
-  cognitivePrompt3: 'यह तलब गुजर जाएगी चाहे आप पिएं या नहीं। जो आप बनना चाहते हैं वह अभी क्या चुनेगा?',
-  physicalIntro: 'तलब शरीर में रहती है। इन तीन से गुजरें:',
-  physicalStep1: 'धीरे-धीरे एक पूरा गिलास पानी पिएं।',
-  physicalStep2: 'खड़े होकर 20 सेकंड अपनी बाहें ऊपर फैलाएं।',
-  physicalStep3: 'अपने कंधे पांच बार पीछे घुमाएं और जबड़ा ढीला करें।',
-  distractionIntro: 'दो मिनट के लिए मन को एक छोटा काम दें:',
-  distractionTask1: 'पांच चीजें बताएं जो आप देख सकते हैं, चार जो सुन सकते हैं, तीन जो छू सकते हैं।',
-  distractionTask2: '100 से सात-सात घटाकर उल्टा गिनें: 100, 93, 86…',
-  distractionTask3: 'किसी प्रिय को एक अच्छा वाक्य भेजें।',
-  incentiveIntro: 'हर तलब जिसे आप संभालते हैं वह पहले से फायदा दे रही है:',
-};
-
-const bn: TranslationKeys = {
-  appName: 'SmokeLess AI',
-  loading: 'লোড হচ্ছে...',
-  skip: 'এখন এড়িয়ে যান',
-  next: 'চালিয়ে যান',
-  done: 'সম্পন্ন',
-  cancel: 'বাতিল',
-  save: 'সংরক্ষণ',
-  delete: 'মুছুন',
-  confirm: 'নিশ্চিত করুন',
-  back: 'পিছনে',
-  or: 'বা',
-
-  tabHome: 'আজ',
-  tabCoach: 'কোচ',
-  tabProgress: 'অগ্রগতি',
-  tabAchievements: 'মাইলফলক',
-  tabSettings: 'সেটিংস',
-
-  homeGreetingMorning: 'শুভ সকাল',
-  homeGreetingAfternoon: 'শুভ অপরাহ্ন',
-  homeGreetingEvening: 'শুভ সন্ধ্যা',
-  homeGreetingNight: 'এখনও জেগে আছেন?',
-  homeCravingBtn: 'ইচ্ছে হচ্ছে',
-  homeLogCig: 'সিগারেট নোট করুন',
-  homeTodayCount: 'আজকের সিগারেট',
-  homeBaselineCount: 'আপনার বেসলাইন',
-  homeMoneySaved: 'সঞ্চিত অর্থ',
-  homeMoneyToday: 'আজ',
-  homeStreakCurrent: 'বর্তমান স্ট্রিক',
-  homeStreakBest: 'সর্বোচ্চ',
-  homeStreakDays: 'দিন',
-  homeStreakDay: 'দিন',
-  homeNudgeDefault: 'প্রতিটি আকাঙ্ক্ষা যা আপনি বিলম্বিত করেন তা একটি জয় — এমনকি ছোট হলেও।',
-  homeNudgeMorning: 'ধূমপান ছাড়া সকাল শুরু করা আজকের সেরা কাজ।',
-  homeNudgeEvening: 'আপনি প্রায় পুরো দিন পার করেছেন। সন্ধ্যাটাই শেষ ধাপ।',
-
-  logTitle: 'সিগারেট নোট করুন',
-  logContextQuestion: 'কারণটি কী ছিল? (ঐচ্ছিক)',
-  logContextStress: 'চাপ',
-  logContextSocial: 'বন্ধুদের সাথে',
-  logContextHabit: 'অভ্যাস',
-  logContextBoredom: 'বিরক্তি',
-  logContextAlcohol: 'মদের সাথে',
-  logContextOther: 'অন্যান্য',
-  logNote: 'নোট',
-  logNotePlaceholder: 'আরও কিছু যোগ করতে চান? (ঐচ্ছিক)',
-  logSubmit: 'নোট করুন',
-  loggedSuccess: 'নথিভুক্ত',
-  loggedMessage: 'সৎভাবে ট্র্যাক করাই অগ্রগতির পথ। আপনি সঠিক করছেন।',
-
-  delayTitle: 'আকাঙ্ক্ষা বিলম্ব সেশন',
-  delaySubtitle: 'আকাঙ্ক্ষাটি কেটে যেতে দিন — সাধারণত কয়েক মিনিটেই হয়।',
-  delayIntensityLabel: 'আকাঙ্ক্ষা কতটা তীব্র?',
-  delayContextLabel: 'কী হচ্ছে?',
-  delayStartBtn: 'সেশন শুরু করুন',
-  delayInhale: 'শ্বাস নিন',
-  delayHold: 'ধরুন',
-  delayExhale: 'শ্বাস ছাড়ুন',
-  delayTimeLeft: 'বাকি',
-  delayMinutes: 'মিনিট',
-  delaySeconds: 'সেকেন্ড',
-  delayAiMessage1: 'আকাঙ্ক্ষা ৩-৫ মিনিটে নিজেই কেটে যায়। আপনি ইতিমধ্যে সবচেয়ে কঠিন অংশ পার করেছেন।',
-  delayAiMessage2: 'আকাঙ্ক্ষাটি লক্ষ্য করুন, লড়াই করবেন না। আপনি পর্যবেক্ষক, আকাঙ্ক্ষা নন।',
-  delayAiMessage3: 'আপনার শরীর প্রতি মিনিটে সুস্থ হচ্ছে। এই বিলম্বের মুহূর্তটি গুরুত্বপূর্ণ।',
-  delayAiMessage4: 'একটি শ্বাসে একটি শ্বাস। আপনাকে এখনই চিরতরে ছাড়তে হবে না — শুধু এই মুহূর্তের জন্য।',
-  delayAiMessage5: 'আপনি আগেও আকাঙ্ক্ষা কাটিয়েছেন। এটিও কেটে যাবে।',
-  delayOutcomeTitle: 'সেশন সম্পন্ন',
-  delayOutcomeSuccess: 'আমি পারলাম ✨',
-  delayOutcomeSmoked: 'আমি তবুও খেলাম — ঠিক আছে',
-  delayOutcomeSuccessMsg: 'এটি সত্যিকারের অগ্রগতি ছিল। প্রতিটি বিলম্ব প্যাটার্নটিকে একটু পরিবর্তন করে।',
-  delayOutcomeSmokedMsg: 'বিলম্বের পরে সিগারেট খেলেও মোট সংখ্যা কমেছে। এটাও গণনা হয়।',
-  delayEndEarly: 'সেশন শেষ করুন',
-
-  coachTitle: 'আপনার কোচ',
-  coachInputPlaceholder: 'আপনার কোচের সাথে কথা বলুন...',
-  coachSend: 'পাঠান',
-  coachQuick1: 'আকাঙ্ক্ষা কাটাতে সাহায্য করুন',
-  coachQuick2: 'আমি একটু হোঁচট খেলাম',
-  coachQuick3: 'আমি কেমন করছি?',
-  coachQuick4: 'আমি চাপে আছি এবং ধূমপান করতে চাই',
-  coachDisclaimer: 'SmokeLess AI একটি আচরণগত সহায়তা সরঞ্জাম, চিকিৎসা সেবা নয়। স্বাস্থ্য জরুরি অবস্থায় পেশাদারের সাথে যোগাযোগ করুন।',
-  coachCrisisMsg: 'আমি বুঝতে পারছি আপনি সংগ্রাম করছেন। আপনি একা নন। যদি আপনি নিজেকে আঘাত করার কথা ভাবছেন, অনুগ্রহ করে এখনই একটি সংকট হেল্পলাইনে যোগাযোগ করুন।',
-  coachCrisisResources: 'সংকট সহায়তা: iCall: 9152987821 | Vandrevala Foundation: 1860-2662-345',
-  coachTyping: 'কোচ ভাবছে...',
-  coachOffline: 'এখন সংযোগ করতে সমস্যা হচ্ছে। মনে রাখুন: এই আকাঙ্ক্ষা কেটে যাবে। ৩টি ধীর শ্বাস নিন।',
-
-  progressTitle: 'আপনার অগ্রগতি',
-  progressHealthTitle: 'স্বাস্থ্য পুনরুদ্ধার',
-  progressMoneyTitle: 'সঞ্চিত অর্থ',
-  progressMoneySaved: 'মোট সাশ্রয়',
-  progressMoneyProjected: 'বার্ষিক সাশ্রয়ের অনুমান',
-  progressPatternsTitle: 'প্যাটার্ন',
-  progressCigsPerDay: 'প্রতিদিন গড়',
-  progressDaysTracked: 'দিন ট্র্যাক করা হয়েছে',
-  progressFreeTime: 'বিলম্ব সেশন',
-  progressAchieved: 'অর্জিত',
-  progressUpcoming: 'আসছে',
-
-  milestone20min: '২০ মিনিট',
-  milestone12hr: '১২ ঘণ্টা',
-  milestone24hr: '২৪ ঘণ্টা',
-  milestone48hr: '৪৮ ঘণ্টা',
-  milestone1week: '১ সপ্তাহ',
-  milestone1month: '১ মাস',
-  milestone3months: '৩ মাস',
-  milestone6months: '৬ মাস',
-  milestone1year: '১ বছর',
-  milestone5years: '৫ বছর',
-  milestone10years: '১০ বছর',
-  milestone20minDesc: 'হৃদস্পন্দন এবং রক্তচাপ স্বাভাবিক মাত্রায় কমতে শুরু করে।',
-  milestone12hrDesc: 'রক্তে কার্বন মনোক্সাইড স্বাভাবিক হয়, অক্সিজেনের মাত্রা বাড়ে।',
-  milestone24hrDesc: 'হার্ট অ্যাটাকের ঝুঁকি কমতে শুরু করে।',
-  milestone48hrDesc: 'স্নায়ু প্রান্ত পুনরায় বৃদ্ধি পেতে শুরু করে। গন্ধ ও স্বাদের অনুভূতি উন্নত হয়।',
-  milestone1weekDesc: 'রক্ত সঞ্চালন উন্নত হয় এবং ফুসফুসের কার্যক্ষমতা বাড়ে।',
-  milestone1monthDesc: 'কাশি ও শ্বাসকষ্ট কমে। ফুসফুসে সিলিয়া স্বাভাবিক কাজ শুরু করে।',
-  milestone3monthsDesc: 'ফুসফুসের কার্যক্ষমতা উন্নত হতে থাকে। সংক্রমণের ঝুঁকি কমে।',
-  milestone6monthsDesc: 'অনেকে শক্তি এবং শ্বাসে উল্লেখযোগ্য উন্নতি লক্ষ্য করেন।',
-  milestone1yearDesc: 'হৃদরোগের ঝুঁকি ধূমপায়ীর তুলনায় অর্ধেক হয়ে যায়।',
-  milestone5yearsDesc: 'স্ট্রোকের ঝুঁকি এখন অধূমপায়ীর মতো।',
-  milestone10yearsDesc: 'ফুসফুস ক্যান্সারের ঝুঁকি এখন ধূমপায়ীর প্রায় অর্ধেক।',
-
-  achievementsTitle: 'মাইলফলক',
-  achievementEarned: 'অর্জিত',
-  achievementUpcoming: 'এগিয়ে চলুন',
-  achievementFirstDelay: 'প্রথম বিলম্ব',
-  achievementFirstDelayDesc: 'প্রথম আকাঙ্ক্ষা বিলম্ব সেশন সম্পন্ন করেছেন।',
-  achievement5Delays: 'বিলম্ব চ্যাম্পিয়ন',
-  achievement5DelaysDesc: '৫টি আকাঙ্ক্ষা বিলম্ব সেশন সম্পন্ন করেছেন।',
-  achievement7DayStreak: 'এক সপ্তাহ শক্তিশালী',
-  achievement7DayStreakDesc: '৭ দিনের ধূমপানমুক্ত স্ট্রিক।',
-  achievement30DayStreak: 'মাসিক মাইলফলক',
-  achievement30DayStreakDesc: 'পুরো একটি মাস। অসাধারণ।',
-  achievementFirstLog: 'সৎ ট্র্যাকার',
-  achievementFirstLogDesc: 'প্রথম এন্ট্রি নথিভুক্ত করেছেন। সততাই পরিবর্তনের ভিত্তি।',
-  achievement100Saved: '₹১০০ সঞ্চয়',
-  achievement100SavedDesc: 'আপনি প্রথম ₹১০০ সঞ্চয় করেছেন। ছোট জয় যোগ হয়।',
-  achievementOneWeekFree: 'এক সপ্তাহ মুক্ত',
-  achievementOneWeekFreeDesc: 'সাত ধূমপানমুক্ত দিন। আপনার ফুসফুস ইতিমধ্যে পরিবর্তন লক্ষ্য করছে।',
-
-  onboardingWelcomeTitle: 'SmokeLess AI-তে স্বাগতম',
-  onboardingWelcomeSubtitle: 'ধূমপান কমানোর জন্য আপনার শান্ত, বিচারহীন কোচ — এক মুহূর্তে।',
-  onboardingWelcomeBtn: 'শুরু করুন',
-  onboardingGuestBtn: 'অ্যাকাউন্ট ছাড়া চেষ্টা করুন',
-  onboardingLangTitle: 'আপনার ভাষা বেছে নিন',
-  onboardingLangSubtitle: 'সমস্ত কোচিং, বিজ্ঞপ্তি ও প্রতিবেদন আপনার নির্বাচিত ভাষায় হবে।',
-  onboardingBaselineTitle: 'আপনার শুরুর বিন্দু',
-  onboardingBaselineSubtitle: 'এটি আপনার অগ্রগতি সঠিকভাবে ট্র্যাক করতে সাহায্য করে।',
-  onboardingDailyCount: 'প্রতিদিন সিগারেট (মোটামুটি)',
-  onboardingDailyCountPlaceholder: 'যেমন ১০',
-  onboardingCostPerPack: 'প্রতি প্যাকের দাম',
-  onboardingCostPlaceholder: 'যেমন ২৫০',
-  onboardingCigsPerPack: 'প্যাকে সিগারেট',
-  onboardingCurrency: 'মুদ্রা (₹, $, €...)',
-  onboardingMotivationTitle: 'আপনাকে কী অনুপ্রাণিত করে?',
-  onboardingMotivationSubtitle: 'যতটা সত্য মনে হয় বেছে নিন — কোনো ভুল উত্তর নেই।',
-  onboardingMotivFamily: 'আমার পরিবার',
-  onboardingMotivHealth: 'আমার স্বাস্থ্য',
-  onboardingMotivMoney: 'অর্থ সাশ্রয়',
-  onboardingMotivFeel: 'ভালো অনুভব করা',
-  onboardingMotivOther: 'আমার নিজের কারণ',
-  onboardingGoalTitle: 'আপনি কীভাবে এটি করতে চান?',
-  onboardingGoalSubtitle: 'কোনো একটি সঠিক পথ নেই। যা সৎ মনে হয় তা বেছে নিন।',
-  onboardingGoalQuit: 'সম্পূর্ণ ছেড়ে দিন',
-  onboardingGoalQuitDesc: 'সম্পূর্ণ বন্ধের দিকে কাজ করা',
-  onboardingGoalReduce: 'ধীরে ধীরে কমান',
-  onboardingGoalReduceDesc: 'নিজের গতিতে কমানো',
-  onboardingGoalTrack: 'এখন শুধু ট্র্যাক করুন',
-  onboardingGoalTrackDesc: 'প্রথমে নিজের প্যাটার্ন বুঝুন',
-  onboardingDone: 'চলুন শুরু করি',
-
-  settingsTitle: 'সেটিংস',
-  settingsLanguage: 'ভাষা',
-  settingsTheme: 'চেহারা',
-  settingsThemeDark: 'ডার্ক',
-  settingsThemeLight: 'লাইট',
-  settingsThemeSystem: 'সিস্টেম অনুযায়ী',
-  settingsNotifications: 'বিজ্ঞপ্তি',
-  settingsNotificationsOn: 'চালু',
-  settingsNotificationsOff: 'বন্ধ',
-  settingsAccount: 'অ্যাকাউন্ট ও নিরাপত্তা',
-  settingsExport: 'আমার ডেটা রপ্তানি করুন',
-  settingsDelete: 'অ্যাকাউন্ট মুছুন',
-  settingsDeleteConfirm: 'আপনি কি নিশ্চিত? এটি আপনার সমস্ত ডেটা স্থায়ীভাবে মুছবে।',
-  settingsDeleteWarning: 'এটি পূর্বাবস্থায় ফেরানো যাবে না।',
-  settingsCrisis: 'সংকট সম্পদ',
-  settingsAbout: 'SmokeLess AI সম্পর্কে',
-  settingsVersion: 'সংস্করণ',
-
-  authLoginTitle: 'সাইন ইন করুন',
-  authEmail: 'ইমেল ঠিকানা',
-  authPassword: 'পাসওয়ার্ড',
-  authLogin: 'সাইন ইন',
-  authSignup: 'অ্যাকাউন্ট তৈরি করুন',
-  authGoogle: 'Google দিয়ে চালিয়ে যান',
-  authMagicLink: 'ম্যাজিক লিংক পাঠান',
-  authNoAccount: 'অ্যাকাউন্ট নেই?',
-  authHaveAccount: 'ইতিমধ্যে অ্যাকাউন্ট আছে?',
-  authForgotPassword: 'পাসওয়ার্ড ভুলে গেছেন?',
-  authGuestNote: 'গেস্ট ডেটা শুধুমাত্র এই ডিভাইসে। ব্যাকআপের জন্য অ্যাকাউন্ট তৈরি করুন।',
-  authEmailSent: 'আপনার ইমেল দেখুন — আমরা সাইন-ইন লিংক পাঠিয়েছি।',
-
-  errorGeneric: 'কিছু ভুল হয়েছে। আবার চেষ্টা করুন।',
-  errorNetwork: 'কিছু সিঙ্ক হয়নি — আমরা স্বয়ংক্রিয়ভাবে পুনরায় চেষ্টা করব।',
-  errorAuth: 'সাইন ইন ব্যর্থ। আপনার তথ্য পরীক্ষা করুন।',
-  errorSync: 'এখন সংরক্ষণ করা যায়নি — পুনরায় চেষ্টার জন্য সারিতে আছে।',
-
-  companionWord: 'সঙ্গী',
-  personaMentor: 'জ্ঞানী পথপ্রদর্শক',
-  personaMentorTagline: 'দৃঢ় ও অন্তর্দৃষ্টিসম্পন্ন — শান্ত প্রজ্ঞায় কথা বলে।',
-  personaFriend: 'বন্ধু',
-  personaFriendTagline: 'উষ্ণ ও সহজ — প্রতিটি জয় আপনার সাথে উদযাপন করে।',
-  personaGuide: 'শান্ত গাইড',
-  personaGuideTagline: 'কোমল ও উপস্থিত, ধীর স্থির শ্বাসের মতো।',
-  onboardingPersonaTitle: 'আপনার সঙ্গী বেছে নিন',
-  onboardingPersonaSubtitle: 'তারা এই যাত্রায় আপনার সাথে থাকবে। আপনি যেকোনো সময় বদলাতে পারেন।',
-  settingsCompanion: 'আপনার সঙ্গী',
-
-  homeStorySectionTitle: 'এ পর্যন্ত আপনার গল্প',
-  homeCleanAirTitle: 'পরিষ্কার শ্বাস',
-  homeCleanAirCaption: 'সহজ শ্বাসের ফিরে পাওয়া মিনিট',
-  homeAvoidedTitle: 'ধরাননি',
-  homeAvoidedCaption: 'যে সিগারেট আপনি জ্বালাননি',
-  homeLifeTitle: 'ফিরে পাওয়া জীবন',
-  homeLifeCaption: 'আপনাকে ফিরিয়ে দেওয়া আনুমানিক মিনিট',
-  homeMoneyPrefix: 'এটি যথেষ্ট',
-  moneyStoryStart: 'শীঘ্রই একটি ছোট আনন্দের জন্য',
-  moneyStoryCoffee: 'একটি ভালো কফির জন্য',
-  moneyStoryMeal: 'বাইরে একটি ভালো খাবারের জন্য',
-  moneyStoryDinner: 'একটি উদযাপনের ডিনারের জন্য',
-  moneyStoryTreat: 'প্রিয় কারও জন্য উপহারের জন্য',
-  moneyStoryGetaway: 'একটি ছোট সাপ্তাহিক ভ্রমণের জন্য',
-  unitMin: 'মিনিট',
-
-  coachEmptyTitle: 'আমি আপনার সাথে আছি',
-  coachEmptySubtitle: 'আমি আপনার অগ্রগতি, ট্রিগার ও জয় জানি। মনে যা আছে বলুন — কখনো বিচার নয়।',
-
-  interveneTitle: 'ঢেউয়ের সাথে বয়ে যান',
-  interveneSubtitle: 'আকাঙ্ক্ষা একটি ঢেউ — ওঠে, চূড়ায় পৌঁছায় এবং সবসময় নেমে যায়। এখন যা দরকার বেছে নিন।',
-  interveneCalming: 'শ্বাস নিন',
-  interveneCalmingDesc: 'শরীর শান্ত করার জন্য নির্দেশিত শ্বাস।',
-  interveneCognitive: 'ভবিষ্যতের আমি',
-  interveneCognitiveDesc: 'যে কারণে শুরু করেছিলেন তার সাথে পুনরায় যুক্ত হন।',
-  interveneIncentive: 'আপনার জয় দেখুন',
-  interveneIncentiveDesc: 'দেখুন আপনার অগ্রগতি কী ফিরিয়ে দিচ্ছে।',
-  intervenePhysical: 'শরীর রিসেট করুন',
-  intervenePhysicalDesc: 'ছোট শারীরিক কাজ যা আকাঙ্ক্ষা কমায়।',
-  interveneDistraction: 'মনোযোগ সরান',
-  interveneDistractionDesc: 'ঢেউটি কেটে যেতে দেওয়ার একটি ছোট চ্যালেঞ্জ।',
-  interveneChooseAnother: 'অন্য কিছু বেছে নিন',
-  interveneReflectDone: 'এখন আমি আরও স্থির বোধ করছি',
-  cognitiveIntro: 'একটি ধীর শ্বাস নিন এবং এর একটিতে থামুন:',
-  cognitivePrompt1: 'এক বছর পরের নিজেকে কল্পনা করুন, সকালের হাঁটায় সহজে শ্বাস নিচ্ছেন। সেই আপনি কেমন অনুভব করে?',
-  cognitivePrompt2: 'মনে করুন কেন শুরু করেছিলেন। কার জন্য করছেন?',
-  cognitivePrompt3: 'এই আকাঙ্ক্ষা কেটে যাবে আপনি ধূমপান করুন বা না করুন। আপনি যা হতে চান সে এখন কী বেছে নেবে?',
-  physicalIntro: 'আকাঙ্ক্ষা শরীরে থাকে। এই তিনটি করুন:',
-  physicalStep1: 'ধীরে ধীরে এক গ্লাস পানি পান করুন।',
-  physicalStep2: 'দাঁড়িয়ে ২০ সেকেন্ড হাত মাথার উপরে প্রসারিত করুন।',
-  physicalStep3: 'কাঁধ পাঁচবার পিছনে ঘোরান এবং চোয়াল শিথিল করুন।',
-  distractionIntro: 'দুই মিনিটের জন্য মনকে একটি ছোট কাজ দিন:',
-  distractionTask1: 'পাঁচটি জিনিস বলুন যা দেখতে পান, চারটি শুনতে পান, তিনটি ছুঁতে পারেন।',
-  distractionTask2: '১০০ থেকে সাত করে উল্টো গুনুন: ১০০, ৯৩, ৮৬…',
-  distractionTask3: 'প্রিয় কাউকে একটি সদয় বাক্য পাঠান।',
-  incentiveIntro: 'প্রতিটি আকাঙ্ক্ষা যা আপনি সামলান তা ইতিমধ্যে ফল দিচ্ছে:',
-};
-
-export const translations: Record<Locale, TranslationKeys> = { en, hi, bn };
 
 export const localeLabels: Record<Locale, string> = {
   en: 'English',
   hi: 'हिंदी',
   bn: 'বাংলা',
 };
+
+export type TranslationKeys = {
+  appName: string;
+  next: string; back: string; skip: string; done: string; cancel: string;
+  save: string; confirm: string; or: string; edit: string; remove: string;
+
+  tabToday: string; tabCompanion: string; tabYou: string;
+
+  // Onboarding
+  onbWelcomeTitle: string; onbWelcomeSubtitle: string;
+  onbFeatureRideWave: string; onbFeatureNeverReset: string; onbFeatureCompanion: string; onbFeatureLanguages: string;
+  onbLangTitle: string; onbLangSubtitle: string;
+  onbTracksTitle: string; onbTracksSubtitle: string;
+  trackTobacco: string; trackAlcohol: string; trackPorn: string;
+  onbBaselineTitle: string; onbBaselineSubtitle: string;
+  baselineTobaccoForm: string; baselineTobaccoUnitsPerDay: string; baselineTobaccoUnitCost: string; baselineTobaccoUnitCostHint: string;
+  formCigarette: string; formBidi: string; formGutkha: string; formPaanMasala: string; formKhaini: string; formVape: string;
+  baselineAlcoholDaysPerWeek: string; baselineAlcoholSpend: string; baselineAlcoholDrinks: string;
+  baselinePornSessionsPerWeek: string; baselinePornSessionLength: string; baselinePornMinimalMode: string; baselinePornMinimalModeDesc: string;
+  onbQuitDateTitle: string; onbQuitDateSubtitle: string; onbQuitDateHaveNotYet: string; onbQuitDateSetDate: string;
+  onbAlcoholGateTitle: string; onbAlcoholGateBody: string; onbAlcoholGateQ1: string; onbAlcoholGateQ2: string;
+  onbAlcoholGateWarning: string; onbAlcoholGateAck: string;
+  onbDone: string;
+
+  // Today
+  todayGreetingMorning: string; todayGreetingAfternoon: string; todayGreetingEvening: string; todayGreetingNight: string;
+  todayUrgeButton: string; todayThreadEmpty: string; todayCheckinPrompt: string; todayNoUrgesToday: string;
+  todayCoachTeaser: string; todayGetSupport: string;
+
+  // Urge flow
+  urgeNameIt: string; urgeWhichTrack: string;
+  urgeRateIt: string; urgeIntensityLabel: string;
+  urgeRideIt: string; urgeRideItSubtitle: string; urgeBreatheOffer: string; urgeBreatheIn: string; urgeBreatheOut: string;
+  urgeElapsed: string; urgeAverageStat: string; urgeThisOneAt: string;
+  urgeWatchItFall: string; urgeReRatePrompt: string;
+  urgeCloseTitle: string; urgeCloseSurfed: string; urgeCloseAlternative: string; urgeCloseLapsed: string;
+  urgeResolvedFactual: string;
+
+  // Lapse protocol
+  lapseAcknowledge: string; lapseCaptureQuestion: string; lapseCaptureSkip: string;
+  lapseReframe: string; lapseFollowUp24h: string; lapseDone: string;
+
+  // Trigger chips (shared keys, per-track subset selected by caller)
+  triggerAfterMeal: string; triggerFirstOfDay: string; triggerToilet: string; triggerWithChaiCoffee: string; triggerWithAlcohol: string;
+  triggerWorkBreak: string; triggerCommute: string; triggerStress: string; triggerBoredom: string; triggerOnPhone: string;
+  triggerOffered: string; triggerAfterArgument: string; triggerBeforeBed: string; triggerAfterSex: string;
+  triggerSocialPressure: string; triggerCelebration: string; triggerLoneliness: string; triggerWithFood: string;
+  triggerHabitTime: string; triggerToSleep: string; triggerAnger: string; triggerWorkEvent: string; triggerOthersDrinking: string;
+  triggerBedAtNight: string; triggerAloneAtHome: string; triggerPhoneScrolling: string; triggerCantSleep: string;
+  triggerWokeEarly: string; triggerProcrastinating: string; triggerAfterDrinking: string;
+
+  // Locations
+  locToilet: string; locBed: string; locBalconyOutside: string; locHomeAlone: string; locWork: string; locCommute: string; locSocialSetting: string;
+
+  // You screen
+  youRecoveryCapital: string; youTotalDaysFree: string; youCurrent: string; youUrgesSurfed: string; youReturnsAfterLapse: string;
+  youReclaimedTitle: string; youReclaimedMoney: string; youReclaimedHours: string; youReclaimedSleep: string;
+  youTracksTitle: string; youAddTrack: string; youTriggersTitle: string; youMilestonesTitle: string; youSettingsTitle: string;
+  youYearProjection: string;
+
+  // Companion / Offline Coach
+  companionTitle: string; companionOfflineNotice: string; companionChoosePath: string;
+  companionUrgeHelp: string; companionHaltCheck: string; companionAfterLapse: string; companionDelayTechnique: string;
+
+  // Crisis
+  crisisTitle: string; crisisSubtitle: string; crisisCallNow: string; crisisFindHelpline: string;
+
+  // Settings
+  settingsLanguage: string; settingsTheme: string; settingsThemeDark: string; settingsThemeLight: string; settingsThemeOled: string; settingsThemeSystem: string;
+  settingsHaptics: string; settingsHapticsFull: string; settingsHapticsEssential: string; settingsHapticsOff: string;
+  settingsAppLock: string; settingsStealthMode: string; settingsNotifications: string;
+  settingsData: string; settingsExport: string; settingsDeleteAll: string; settingsDeleteConfirm: string;
+  settingsAbout: string; settingsCrisisResources: string; settingsCurrency: string;
+
+  // Log (+1 quick add)
+  logTitle: string; logQuantity: string; logWhatTriggered: string; logWhere: string; logSubmit: string; logUndo: string;
+
+  // Check-in
+  checkinTitle: string; checkinMood: string; checkinSleep: string; checkinHalt: string;
+  moodGood: string; moodOkay: string; moodLow: string; moodRough: string;
+  sleepGood: string; sleepOkay: string; sleepPoor: string;
+  haltHungry: string; haltAngry: string; haltLonely: string; haltTired: string;
+};
+
+const en: TranslationKeys = {
+  appName: 'Dhruv',
+  next: 'Continue', back: 'Back', skip: 'Skip for now', done: 'Done', cancel: 'Cancel',
+  save: 'Save', confirm: 'Confirm', or: 'or', edit: 'Edit', remove: 'Remove',
+
+  tabToday: 'Today', tabCompanion: 'Companion', tabYou: 'You',
+
+  onbWelcomeTitle: 'Dhruv',
+  onbWelcomeSubtitle: 'A private companion for the next twenty minutes.',
+  onbFeatureRideWave: 'Ride a craving with something real to hold onto',
+  onbFeatureNeverReset: 'Nothing you’ve done here is ever taken away',
+  onbFeatureCompanion: 'A companion who never keeps score against you',
+  onbFeatureLanguages: 'English · हिंदी · বাংলা',
+  onbLangTitle: 'Choose your language', onbLangSubtitle: 'You can change this any time in Settings.',
+  onbTracksTitle: 'What are you working on?', onbTracksSubtitle: 'Choose everything that applies. You can change this any time.',
+  trackTobacco: 'Tobacco', trackAlcohol: 'Alcohol', trackPorn: 'Porn',
+  onbBaselineTitle: 'Your starting point', onbBaselineSubtitle: 'This is what makes every number honest later. You can edit it any time.',
+  baselineTobaccoForm: 'What do you usually use?', baselineTobaccoUnitsPerDay: 'Units per day (roughly)',
+  baselineTobaccoUnitCost: 'Cost per single unit', baselineTobaccoUnitCostHint: 'Loose pricing, not the pack price — we’ll divide down if you only know the pack price.',
+  formCigarette: 'Cigarette', formBidi: 'Bidi', formGutkha: 'Gutkha', formPaanMasala: 'Paan masala', formKhaini: 'Khaini', formVape: 'Vape',
+  baselineAlcoholDaysPerWeek: 'Drinking days per week', baselineAlcoholSpend: 'Typical spend per occasion', baselineAlcoholDrinks: 'Typical drinks per occasion',
+  baselinePornSessionsPerWeek: 'Sessions per week (roughly)', baselinePornSessionLength: 'Typical session length',
+  baselinePornMinimalMode: 'Log minimally', baselinePornMinimalModeDesc: 'Some people find detailed tracking helpful. Others find it makes things worse. With this on, we’ll just log that it happened — nothing else.',
+  onbQuitDateTitle: 'Quit date', onbQuitDateSubtitle: 'Optional. “I haven’t stopped yet” is a completely valid place to start.',
+  onbQuitDateHaveNotYet: 'I haven’t stopped yet', onbQuitDateSetDate: 'Set a date',
+  onbAlcoholGateTitle: 'Before you start — a safety check',
+  onbAlcoholGateBody: 'Stopping alcohol suddenly after heavy daily drinking can be medically dangerous, including seizures. This is not something to manage alone.',
+  onbAlcoholGateQ1: 'Do you drink heavily every day?', onbAlcoholGateQ2: 'Have you ever had tremor, sweating, nausea on waking, or a seizure when you tried to stop?',
+  onbAlcoholGateWarning: 'Please speak to a doctor before you stop drinking. Dhruv can support you, but it cannot safely guide you through withdrawal on its own.',
+  onbAlcoholGateAck: 'I understand, and I’ll speak to a doctor before stopping',
+  onbDone: 'Let’s begin',
+
+  todayGreetingMorning: 'Good morning', todayGreetingAfternoon: 'Good afternoon', todayGreetingEvening: 'Good evening', todayGreetingNight: 'Still up?',
+  todayUrgeButton: 'I’m having an urge', todayThreadEmpty: 'This is where it starts.',
+  todayCheckinPrompt: 'How are things today?', todayNoUrgesToday: 'Nothing today. That counts.',
+  todayCoachTeaser: 'Talk to your companion', todayGetSupport: 'Get support now',
+
+  urgeNameIt: 'What is it?', urgeWhichTrack: 'Which one is this?',
+  urgeRateIt: 'How strong is it right now?', urgeIntensityLabel: 'Intensity',
+  urgeRideIt: 'I’m here. You don’t have to do anything but wait.',
+  urgeRideItSubtitle: 'Stay with it. It will move.',
+  urgeBreatheOffer: 'Want to breathe with me?', urgeBreatheIn: 'In', urgeBreatheOut: 'Out',
+  urgeElapsed: 'elapsed', urgeAverageStat: 'Your urges have averaged {avg}.', urgeThisOneAt: 'This one is at {current}.',
+  urgeWatchItFall: 'Watch it fall', urgeReRatePrompt: 'Where is it now?',
+  urgeCloseTitle: 'How did it go?', urgeCloseSurfed: 'I rode it out', urgeCloseAlternative: 'I did something else instead', urgeCloseLapsed: 'I didn’t ride it out',
+  urgeResolvedFactual: 'It passed.',
+
+  lapseAcknowledge: 'Okay. That happened.', lapseCaptureQuestion: 'What was going on? (optional)', lapseCaptureSkip: 'Skip this',
+  lapseReframe: 'This is data, not a verdict. Nothing you’ve built disappears because of tonight.',
+  lapseFollowUp24h: 'Checking in — no questions, just glad you’re here.', lapseDone: 'Back to Today',
+
+  triggerAfterMeal: 'After a meal', triggerFirstOfDay: 'First of the day', triggerToilet: 'Toilet', triggerWithChaiCoffee: 'With chai/coffee', triggerWithAlcohol: 'With alcohol',
+  triggerWorkBreak: 'Work break', triggerCommute: 'Commute', triggerStress: 'Stress', triggerBoredom: 'Boredom', triggerOnPhone: 'On my phone',
+  triggerOffered: 'Someone offered', triggerAfterArgument: 'After an argument', triggerBeforeBed: 'Before bed', triggerAfterSex: 'After sex',
+  triggerSocialPressure: 'Social pressure', triggerCelebration: 'Celebration', triggerLoneliness: 'Loneliness', triggerWithFood: 'With food',
+  triggerHabitTime: 'Just that time', triggerToSleep: 'To sleep', triggerAnger: 'Anger', triggerWorkEvent: 'Work event', triggerOthersDrinking: 'Someone else was drinking',
+  triggerBedAtNight: 'In bed at night', triggerAloneAtHome: 'Alone at home', triggerPhoneScrolling: 'Scrolling my phone', triggerCantSleep: 'Can’t sleep',
+  triggerWokeEarly: 'Woke early', triggerProcrastinating: 'Procrastinating', triggerAfterDrinking: 'After drinking',
+
+  locToilet: 'Toilet / bathroom', locBed: 'Bed', locBalconyOutside: 'Balcony / outside', locHomeAlone: 'Home alone', locWork: 'Work', locCommute: 'Commute', locSocialSetting: 'Social setting',
+
+  youRecoveryCapital: 'Recovery capital', youTotalDaysFree: 'total days free', youCurrent: 'current', youUrgesSurfed: 'urges surfed', youReturnsAfterLapse: 'returns after a lapse',
+  youReclaimedTitle: 'Reclaimed', youReclaimedMoney: 'Money', youReclaimedHours: 'Hours', youReclaimedSleep: 'Sleep',
+  youTracksTitle: 'Tracks', youAddTrack: 'Add a track', youTriggersTitle: 'Triggers', youMilestonesTitle: 'Milestones', youSettingsTitle: 'Settings',
+  youYearProjection: 'At this rate, over a year',
+
+  companionTitle: 'Companion', companionOfflineNotice: 'This is a scripted coach — no network needed, no AI yet. A learning companion is planned for later.',
+  companionChoosePath: 'What would help right now?', companionUrgeHelp: 'Help with an urge', companionHaltCheck: 'Check in with myself', companionAfterLapse: 'After a lapse', companionDelayTechnique: 'A delay technique',
+
+  crisisTitle: 'Get support now', crisisSubtitle: 'You don’t have to explain anything to call.', crisisCallNow: 'Call now', crisisFindHelpline: 'Find a helpline near you',
+
+  settingsLanguage: 'Language', settingsTheme: 'Appearance', settingsThemeDark: 'Dark', settingsThemeLight: 'Light', settingsThemeOled: 'True black (OLED)', settingsThemeSystem: 'Follow system',
+  settingsHaptics: 'Haptics', settingsHapticsFull: 'Full', settingsHapticsEssential: 'Essential only', settingsHapticsOff: 'Off',
+  settingsAppLock: 'App lock', settingsStealthMode: 'Stealth mode', settingsNotifications: 'Notifications',
+  settingsData: 'Your data', settingsExport: 'Export my data', settingsDeleteAll: 'Delete everything', settingsDeleteConfirm: 'This permanently deletes all your data from this device. It cannot be undone.',
+  settingsAbout: 'About Dhruv', settingsCrisisResources: 'Crisis resources', settingsCurrency: 'Currency',
+
+  logTitle: 'Log', logQuantity: 'How many?', logWhatTriggered: 'What brought it on?', logWhere: 'Where were you?', logSubmit: 'Log it', logUndo: 'Undo',
+
+  checkinTitle: 'Today', checkinMood: 'Mood', checkinSleep: 'Sleep last night', checkinHalt: 'Any of these right now?',
+  moodGood: 'Good', moodOkay: 'Okay', moodLow: 'Low', moodRough: 'Rough',
+  sleepGood: 'Good', sleepOkay: 'Okay', sleepPoor: 'Poor',
+  haltHungry: 'Hungry', haltAngry: 'Angry', haltLonely: 'Lonely', haltTired: 'Tired',
+};
+
+const hi: TranslationKeys = {
+  ...en,
+  appName: 'ध्रुव',
+  next: 'जारी रखें', back: 'वापस', skip: 'अभी छोड़ें', done: 'हो गया', cancel: 'रद्द करें',
+  save: 'सहेजें', confirm: 'पुष्टि करें', or: 'या', edit: 'बदलें', remove: 'हटाएं',
+  tabToday: 'आज', tabCompanion: 'साथी', tabYou: 'आप',
+  onbWelcomeTitle: 'ध्रुव',
+  onbWelcomeSubtitle: 'अगले बीस मिनट के लिए एक निजी साथी।',
+  onbFeatureRideWave: 'तलब को कुछ असली सहारे के साथ पार करें',
+  onbFeatureNeverReset: 'यहां जो भी किया है वो कभी छिनता नहीं',
+  onbFeatureCompanion: 'एक साथी जो आपके खिलाफ हिसाब नहीं रखता',
+  onbFeatureLanguages: 'English · हिंदी · বাংলা',
+  onbLangTitle: 'अपनी भाषा चुनें', onbLangSubtitle: 'आप इसे सेटिंग्स में कभी भी बदल सकते हैं।',
+  onbTracksTitle: 'आप किस पर काम कर रहे हैं?', onbTracksSubtitle: 'जो भी लागू हो, चुनें। आप इसे कभी भी बदल सकते हैं।',
+  trackTobacco: 'तंबाकू', trackAlcohol: 'शराब', trackPorn: 'पॉर्न',
+  onbBaselineTitle: 'आपकी शुरुआत', onbBaselineSubtitle: 'यही वजह है कि आगे हर आंकड़ा सही निकलेगा। आप इसे कभी भी बदल सकते हैं।',
+  baselineTobaccoForm: 'आप आमतौर पर क्या लेते हैं?', baselineTobaccoUnitsPerDay: 'प्रति दिन (लगभग)',
+  baselineTobaccoUnitCost: 'एक नग की कीमत', baselineTobaccoUnitCostHint: 'खुली कीमत, पैकेट की नहीं — अगर सिर्फ पैकेट की कीमत पता है तो हम बांट लेंगे।',
+  formCigarette: 'सिगरेट', formBidi: 'बीड़ी', formGutkha: 'गुटखा', formPaanMasala: 'पान मसाला', formKhaini: 'खैनी', formVape: 'वेप',
+  baselineAlcoholDaysPerWeek: 'हफ्ते में कितने दिन पीते हैं', baselineAlcoholSpend: 'एक बार में सामान्य खर्च', baselineAlcoholDrinks: 'एक बार में सामान्य मात्रा',
+  baselinePornSessionsPerWeek: 'हफ्ते में कितनी बार (लगभग)', baselinePornSessionLength: 'सामान्य समय',
+  baselinePornMinimalMode: 'सिर्फ न्यूनतम नोट करें', baselinePornMinimalModeDesc: 'कुछ लोगों के लिए विस्तृत ट्रैकिंग मददगार होती है, कुछ के लिए यह और मुश्किल कर देती है। यह चालू करने पर हम बस इतना नोट करेंगे कि हुआ — बाकी कुछ नहीं।',
+  onbQuitDateTitle: 'छोड़ने की तारीख', onbQuitDateSubtitle: 'वैकल्पिक। "मैंने अभी शुरुआत नहीं की" भी बिल्कुल सही जगह है।',
+  onbQuitDateHaveNotYet: 'मैंने अभी शुरुआत नहीं की', onbQuitDateSetDate: 'तारीख तय करें',
+  onbAlcoholGateTitle: 'शुरू करने से पहले — एक सुरक्षा जांच',
+  onbAlcoholGateBody: 'रोज़ भारी मात्रा में पीने के बाद अचानक शराब छोड़ना चिकित्सकीय रूप से खतरनाक हो सकता है, यहां तक कि दौरे भी आ सकते हैं। यह अकेले संभालने वाली बात नहीं है।',
+  onbAlcoholGateQ1: 'क्या आप रोज़ भारी मात्रा में पीते हैं?', onbAlcoholGateQ2: 'क्या छोड़ने की कोशिश में कभी कंपकंपी, पसीना, सुबह जी मिचलाना, या दौरा हुआ है?',
+  onbAlcoholGateWarning: 'कृपया पीना बंद करने से पहले डॉक्टर से बात करें। ध्रुव आपका साथ दे सकता है, लेकिन यह अकेले आपको वापसी की प्रक्रिया से सुरक्षित रूप से नहीं निकाल सकता।',
+  onbAlcoholGateAck: 'मैं समझता/समझती हूं, और बंद करने से पहले डॉक्टर से बात करूंगा/करूंगी',
+  onbDone: 'चलिए शुरू करें',
+  todayGreetingMorning: 'सुप्रभात', todayGreetingAfternoon: 'नमस्कार', todayGreetingEvening: 'शुभ संध्या', todayGreetingNight: 'अभी भी जाग रहे हैं?',
+  todayUrgeButton: 'मुझे तलब लग रही है', todayThreadEmpty: 'यहीं से शुरुआत होती है।',
+  todayCheckinPrompt: 'आज कैसा चल रहा है?', todayNoUrgesToday: 'आज कुछ नहीं। यह भी मायने रखता है।',
+  todayCoachTeaser: 'अपने साथी से बात करें', todayGetSupport: 'अभी मदद लें',
+  urgeNameIt: 'यह क्या है?', urgeWhichTrack: 'यह किसके बारे में है?',
+  urgeRateIt: 'अभी यह कितनी तेज़ है?', urgeIntensityLabel: 'तीव्रता',
+  urgeRideIt: 'मैं यहां हूं। आपको बस रुकना है, और कुछ नहीं करना।',
+  urgeRideItSubtitle: 'इसके साथ रहें। यह बदलेगी।',
+  urgeBreatheOffer: 'मेरे साथ सांस लेना चाहेंगे?', urgeBreatheIn: 'अंदर', urgeBreatheOut: 'बाहर',
+  urgeElapsed: 'बीत चुका', urgeAverageStat: 'आपकी तलब का औसत {avg} रहा है।', urgeThisOneAt: 'यह अभी {current} पर है।',
+  urgeWatchItFall: 'इसे गिरते देखें', urgeReRatePrompt: 'अभी यह कहां है?',
+  urgeCloseTitle: 'कैसा रहा?', urgeCloseSurfed: 'मैंने इसे पार कर लिया', urgeCloseAlternative: 'मैंने इसकी जगह कुछ और किया', urgeCloseLapsed: 'मैं इसे पार नहीं कर पाया/पाई',
+  urgeResolvedFactual: 'यह गुज़र गई।',
+  lapseAcknowledge: 'ठीक है। यह हो गया।', lapseCaptureQuestion: 'क्या हो रहा था? (वैकल्पिक)', lapseCaptureSkip: 'यह छोड़ें',
+  lapseReframe: 'यह एक जानकारी है, फैसला नहीं। आज रात की वजह से आपने जो भी बनाया है, वो कहीं नहीं जाता।',
+  lapseFollowUp24h: 'बस देख रहे हैं — कोई सवाल नहीं, बस खुशी है कि आप यहां हैं।', lapseDone: 'आज पर वापस',
+  triggerAfterMeal: 'खाने के बाद', triggerFirstOfDay: 'दिन की पहली बार', triggerToilet: 'टॉयलेट', triggerWithChaiCoffee: 'चाय/कॉफी के साथ', triggerWithAlcohol: 'शराब के साथ',
+  triggerWorkBreak: 'काम का ब्रेक', triggerCommute: 'आना-जाना', triggerStress: 'तनाव', triggerBoredom: 'बोरियत', triggerOnPhone: 'फोन पर',
+  triggerOffered: 'किसी ने ऑफर किया', triggerAfterArgument: 'बहस के बाद', triggerBeforeBed: 'सोने से पहले', triggerAfterSex: 'संबंध बनाने के बाद',
+  triggerSocialPressure: 'सामाजिक दबाव', triggerCelebration: 'जश्न', triggerLoneliness: 'अकेलापन', triggerWithFood: 'खाने के साथ',
+  triggerHabitTime: 'बस वही समय', triggerToSleep: 'सोने के लिए', triggerAnger: 'गुस्सा', triggerWorkEvent: 'ऑफिस का इवेंट', triggerOthersDrinking: 'कोई और पी रहा था',
+  triggerBedAtNight: 'रात को बिस्तर पर', triggerAloneAtHome: 'घर पर अकेले', triggerPhoneScrolling: 'फोन चलाते हुए', triggerCantSleep: 'नींद नहीं आ रही',
+  triggerWokeEarly: 'जल्दी नींद खुल गई', triggerProcrastinating: 'टालमटोल कर रहा/रही हूं', triggerAfterDrinking: 'पीने के बाद',
+  locToilet: 'टॉयलेट / बाथरूम', locBed: 'बिस्तर', locBalconyOutside: 'बालकनी / बाहर', locHomeAlone: 'घर पर अकेले', locWork: 'काम पर', locCommute: 'आना-जाना', locSocialSetting: 'सामाजिक माहौल',
+  youRecoveryCapital: 'रिकवरी कैपिटल', youTotalDaysFree: 'कुल आज़ाद दिन', youCurrent: 'अभी', youUrgesSurfed: 'पार की गई तलब', youReturnsAfterLapse: 'फिसलने के बाद वापसी',
+  youReclaimedTitle: 'वापस पाया', youReclaimedMoney: 'पैसा', youReclaimedHours: 'घंटे', youReclaimedSleep: 'नींद',
+  youTracksTitle: 'ट्रैक', youAddTrack: 'ट्रैक जोड़ें', youTriggersTitle: 'ट्रिगर', youMilestonesTitle: 'मील के पत्थर', youSettingsTitle: 'सेटिंग्स',
+  youYearProjection: 'इस दर पर, एक साल में',
+  companionTitle: 'साथी', companionOfflineNotice: 'यह एक स्क्रिप्टेड कोच है — नेटवर्क की ज़रूरत नहीं, अभी कोई AI नहीं। सीखने वाला साथी आगे आएगा।',
+  companionChoosePath: 'अभी क्या मदद करेगा?', companionUrgeHelp: 'तलब में मदद', companionHaltCheck: 'खुद को जांचें', companionAfterLapse: 'फिसलने के बाद', companionDelayTechnique: 'देरी की तकनीक',
+  crisisTitle: 'अभी मदद लें', crisisSubtitle: 'कॉल करने के लिए कुछ समझाना ज़रूरी नहीं।', crisisCallNow: 'अभी कॉल करें', crisisFindHelpline: 'अपने पास की हेल्पलाइन खोजें',
+  settingsLanguage: 'भाषा', settingsTheme: 'रूप', settingsThemeDark: 'डार्क', settingsThemeLight: 'लाइट', settingsThemeOled: 'ट्रू ब्लैक (OLED)', settingsThemeSystem: 'सिस्टम अनुसार',
+  settingsHaptics: 'हैप्टिक्स', settingsHapticsFull: 'पूरा', settingsHapticsEssential: 'ज़रूरी ही', settingsHapticsOff: 'बंद',
+  settingsAppLock: 'ऐप लॉक', settingsStealthMode: 'स्टील्थ मोड', settingsNotifications: 'सूचनाएं',
+  settingsData: 'आपका डेटा', settingsExport: 'मेरा डेटा निर्यात करें', settingsDeleteAll: 'सब कुछ हटाएं', settingsDeleteConfirm: 'यह इस डिवाइस से आपका सारा डेटा हमेशा के लिए हटा देगा। इसे वापस नहीं लिया जा सकता।',
+  settingsAbout: 'ध्रुव के बारे में', settingsCrisisResources: 'संकट संसाधन', settingsCurrency: 'मुद्रा',
+  logTitle: 'नोट करें', logQuantity: 'कितने?', logWhatTriggered: 'वजह क्या रही?', logWhere: 'कहां थे?', logSubmit: 'नोट करें', logUndo: 'वापस लें',
+  checkinTitle: 'आज', checkinMood: 'मनोदशा', checkinSleep: 'कल रात की नींद', checkinHalt: 'अभी इनमें से कुछ?',
+  moodGood: 'अच्छा', moodOkay: 'ठीक-ठाक', moodLow: 'कम', moodRough: 'मुश्किल',
+  sleepGood: 'अच्छी', sleepOkay: 'ठीक-ठाक', sleepPoor: 'खराब',
+  haltHungry: 'भूख', haltAngry: 'गुस्सा', haltLonely: 'अकेलापन', haltTired: 'थकान',
+};
+
+const bn: TranslationKeys = {
+  ...en,
+  appName: 'ধ্রুব',
+  next: 'চালিয়ে যান', back: 'পিছনে', skip: 'এখন এড়িয়ে যান', done: 'সম্পন্ন', cancel: 'বাতিল',
+  save: 'সংরক্ষণ', confirm: 'নিশ্চিত করুন', or: 'বা', edit: 'পরিবর্তন', remove: 'সরান',
+  tabToday: 'আজ', tabCompanion: 'সঙ্গী', tabYou: 'আপনি',
+  onbWelcomeTitle: 'ধ্রুব',
+  onbWelcomeSubtitle: 'পরের বিশ মিনিটের জন্য একটি ব্যক্তিগত সঙ্গী।',
+  onbFeatureRideWave: 'আকাঙ্ক্ষাকে সত্যিকারের কিছু ধরে পার হন',
+  onbFeatureNeverReset: 'এখানে যা করেছেন তা কখনো কেড়ে নেওয়া হয় না',
+  onbFeatureCompanion: 'এমন একজন সঙ্গী যে আপনার বিরুদ্ধে হিসাব রাখে না',
+  onbFeatureLanguages: 'English · হিন্দি · বাংলা',
+  onbLangTitle: 'আপনার ভাষা বেছে নিন', onbLangSubtitle: 'সেটিংসে গিয়ে যেকোনো সময় এটি পরিবর্তন করতে পারবেন।',
+  onbTracksTitle: 'আপনি কী নিয়ে কাজ করছেন?', onbTracksSubtitle: 'যা প্রযোজ্য সব বেছে নিন। যেকোনো সময় পরিবর্তন করা যাবে।',
+  trackTobacco: 'তামাক', trackAlcohol: 'মদ্যপান', trackPorn: 'পর্ন',
+  onbBaselineTitle: 'আপনার শুরুর বিন্দু', onbBaselineSubtitle: 'এটাই পরে প্রতিটি সংখ্যাকে সঠিক করে তোলে। যেকোনো সময় পরিবর্তন করতে পারবেন।',
+  baselineTobaccoForm: 'সাধারণত কী ব্যবহার করেন?', baselineTobaccoUnitsPerDay: 'দৈনিক (আনুমানিক)',
+  baselineTobaccoUnitCost: 'একটির দাম', baselineTobaccoUnitCostHint: 'খুচরা দাম, প্যাকেটের দাম নয় — শুধু প্যাকেটের দাম জানা থাকলে আমরা ভাগ করে নেব।',
+  formCigarette: 'সিগারেট', formBidi: 'বিড়ি', formGutkha: 'গুটখা', formPaanMasala: 'পান মশলা', formKhaini: 'খৈনি', formVape: 'ভেপ',
+  baselineAlcoholDaysPerWeek: 'সপ্তাহে কত দিন পান করেন', baselineAlcoholSpend: 'একবারে সাধারণ খরচ', baselineAlcoholDrinks: 'একবারে সাধারণ পরিমাণ',
+  baselinePornSessionsPerWeek: 'সপ্তাহে কতবার (আনুমানিক)', baselinePornSessionLength: 'সাধারণ সময়কাল',
+  baselinePornMinimalMode: 'শুধু ন্যূনতম নথিভুক্ত করুন', baselinePornMinimalModeDesc: 'কারও কারও কাছে বিস্তারিত ট্র্যাকিং সহায়ক, কারও কারও কাছে তা আরও কঠিন করে তোলে। এটি চালু থাকলে আমরা শুধু এটুকু নথিভুক্ত করব যে এটি ঘটেছে — আর কিছু নয়।',
+  onbQuitDateTitle: 'ছাড়ার তারিখ', onbQuitDateSubtitle: 'ঐচ্ছিক। "আমি এখনও শুরু করিনি" এটাও পুরোপুরি বৈধ একটি শুরু।',
+  onbQuitDateHaveNotYet: 'আমি এখনও শুরু করিনি', onbQuitDateSetDate: 'একটি তারিখ ঠিক করুন',
+  onbAlcoholGateTitle: 'শুরুর আগে — একটি নিরাপত্তা পরীক্ষা',
+  onbAlcoholGateBody: 'প্রতিদিন প্রচুর মদ্যপানের পর হঠাৎ বন্ধ করা চিকিৎসাগতভাবে বিপজ্জনক হতে পারে, এমনকি খিঁচুনিও হতে পারে। এটি একা সামলানোর বিষয় নয়।',
+  onbAlcoholGateQ1: 'আপনি কি প্রতিদিন প্রচুর পরিমাণে পান করেন?', onbAlcoholGateQ2: 'বন্ধ করার চেষ্টা করার সময় কখনো কাঁপুনি, ঘাম, সকালে বমি বমি ভাব বা খিঁচুনি হয়েছে?',
+  onbAlcoholGateWarning: 'পান করা বন্ধ করার আগে অনুগ্রহ করে একজন ডাক্তারের সাথে কথা বলুন। ধ্রুব আপনার পাশে থাকতে পারে, কিন্তু এটি একা আপনাকে নিরাপদে প্রত্যাহারের মধ্য দিয়ে নিয়ে যেতে পারে না।',
+  onbAlcoholGateAck: 'আমি বুঝেছি, এবং বন্ধ করার আগে ডাক্তারের সাথে কথা বলব',
+  onbDone: 'চলুন শুরু করি',
+  todayGreetingMorning: 'শুভ সকাল', todayGreetingAfternoon: 'শুভ অপরাহ্ন', todayGreetingEvening: 'শুভ সন্ধ্যা', todayGreetingNight: 'এখনও জেগে আছেন?',
+  todayUrgeButton: 'আমার আকাঙ্ক্ষা হচ্ছে', todayThreadEmpty: 'এখান থেকেই শুরু।',
+  todayCheckinPrompt: 'আজ কেমন যাচ্ছে?', todayNoUrgesToday: 'আজ কিছু হয়নি। এটাও গণনায় আসে।',
+  todayCoachTeaser: 'আপনার সঙ্গীর সাথে কথা বলুন', todayGetSupport: 'এখনই সাহায্য নিন',
+  urgeNameIt: 'এটা কী?', urgeWhichTrack: 'এটা কীসের ব্যাপারে?',
+  urgeRateIt: 'এখন এটা কতটা তীব্র?', urgeIntensityLabel: 'তীব্রতা',
+  urgeRideIt: 'আমি এখানে আছি। আপনাকে শুধু অপেক্ষা করতে হবে, আর কিছু না।',
+  urgeRideItSubtitle: 'এর সাথে থাকুন। এটা বদলাবে।',
+  urgeBreatheOffer: 'আমার সাথে শ্বাস নিতে চান?', urgeBreatheIn: 'ভেতরে', urgeBreatheOut: 'বাইরে',
+  urgeElapsed: 'পার হয়েছে', urgeAverageStat: 'আপনার আকাঙ্ক্ষার গড় {avg}।', urgeThisOneAt: 'এটা এখন {current} এ আছে।',
+  urgeWatchItFall: 'এটা কমতে দেখুন', urgeReRatePrompt: 'এখন এটা কোথায়?',
+  urgeCloseTitle: 'কেমন গেল?', urgeCloseSurfed: 'আমি এটা পার করেছি', urgeCloseAlternative: 'আমি এর বদলে অন্য কিছু করেছি', urgeCloseLapsed: 'আমি এটা পার করতে পারিনি',
+  urgeResolvedFactual: 'এটা কেটে গেছে।',
+  lapseAcknowledge: 'ঠিক আছে। এটা হয়েছে।', lapseCaptureQuestion: 'কী ঘটছিল? (ঐচ্ছিক)', lapseCaptureSkip: 'এটি এড়িয়ে যান',
+  lapseReframe: 'এটা তথ্য, রায় নয়। আজ রাতের কারণে আপনি যা গড়েছেন তার কিছুই হারায় না।',
+  lapseFollowUp24h: 'শুধু খোঁজ নিচ্ছি — কোনো প্রশ্ন নেই, শুধু ভালো লাগছে আপনি এখানে আছেন।', lapseDone: 'আজ-এ ফিরে যান',
+  triggerAfterMeal: 'খাবারের পর', triggerFirstOfDay: 'দিনের প্রথমটি', triggerToilet: 'টয়লেট', triggerWithChaiCoffee: 'চা/কফির সাথে', triggerWithAlcohol: 'মদের সাথে',
+  triggerWorkBreak: 'কাজের বিরতি', triggerCommute: 'যাতায়াত', triggerStress: 'চাপ', triggerBoredom: 'একঘেয়েমি', triggerOnPhone: 'ফোনে',
+  triggerOffered: 'কেউ দিয়েছিল', triggerAfterArgument: 'ঝগড়ার পর', triggerBeforeBed: 'ঘুমানোর আগে', triggerAfterSex: 'সহবাসের পর',
+  triggerSocialPressure: 'সামাজিক চাপ', triggerCelebration: 'উদযাপন', triggerLoneliness: 'একাকীত্ব', triggerWithFood: 'খাবারের সাথে',
+  triggerHabitTime: 'ঠিক সেই সময়', triggerToSleep: 'ঘুমানোর জন্য', triggerAnger: 'রাগ', triggerWorkEvent: 'কাজের অনুষ্ঠান', triggerOthersDrinking: 'অন্য কেউ পান করছিল',
+  triggerBedAtNight: 'রাতে বিছানায়', triggerAloneAtHome: 'বাড়িতে একা', triggerPhoneScrolling: 'ফোন স্ক্রল করছি', triggerCantSleep: 'ঘুম আসছে না',
+  triggerWokeEarly: 'তাড়াতাড়ি ঘুম ভেঙেছে', triggerProcrastinating: 'কালক্ষেপণ করছি', triggerAfterDrinking: 'পান করার পর',
+  locToilet: 'টয়লেট / বাথরুম', locBed: 'বিছানা', locBalconyOutside: 'বারান্দা / বাইরে', locHomeAlone: 'বাড়িতে একা', locWork: 'কাজে', locCommute: 'যাতায়াত', locSocialSetting: 'সামাজিক পরিবেশ',
+  youRecoveryCapital: 'রিকভারি ক্যাপিটাল', youTotalDaysFree: 'মোট মুক্ত দিন', youCurrent: 'বর্তমান', youUrgesSurfed: 'পার করা আকাঙ্ক্ষা', youReturnsAfterLapse: 'হোঁচটের পর ফেরা',
+  youReclaimedTitle: 'ফিরে পাওয়া', youReclaimedMoney: 'অর্থ', youReclaimedHours: 'ঘণ্টা', youReclaimedSleep: 'ঘুম',
+  youTracksTitle: 'ট্র্যাক', youAddTrack: 'ট্র্যাক যোগ করুন', youTriggersTitle: 'ট্রিগার', youMilestonesTitle: 'মাইলফলক', youSettingsTitle: 'সেটিংস',
+  youYearProjection: 'এই হারে, এক বছরে',
+  companionTitle: 'সঙ্গী', companionOfflineNotice: 'এটি একটি স্ক্রিপ্টেড কোচ — নেটওয়ার্কের দরকার নেই, এখনও কোনো AI নেই। শেখার সঙ্গী পরে আসছে।',
+  companionChoosePath: 'এখন কী সাহায্য করবে?', companionUrgeHelp: 'আকাঙ্ক্ষায় সাহায্য', companionHaltCheck: 'নিজেকে যাচাই করুন', companionAfterLapse: 'হোঁচটের পর', companionDelayTechnique: 'বিলম্ব কৌশল',
+  crisisTitle: 'এখনই সাহায্য নিন', crisisSubtitle: 'কল করতে কিছু ব্যাখ্যা করার দরকার নেই।', crisisCallNow: 'এখনই কল করুন', crisisFindHelpline: 'আপনার কাছের হেল্পলাইন খুঁজুন',
+  settingsLanguage: 'ভাষা', settingsTheme: 'রূপ', settingsThemeDark: 'ডার্ক', settingsThemeLight: 'লাইট', settingsThemeOled: 'ট্রু ব্ল্যাক (OLED)', settingsThemeSystem: 'সিস্টেম অনুযায়ী',
+  settingsHaptics: 'হ্যাপটিক্স', settingsHapticsFull: 'সম্পূর্ণ', settingsHapticsEssential: 'শুধু প্রয়োজনীয়', settingsHapticsOff: 'বন্ধ',
+  settingsAppLock: 'অ্যাপ লক', settingsStealthMode: 'স্টিলথ মোড', settingsNotifications: 'বিজ্ঞপ্তি',
+  settingsData: 'আপনার ডেটা', settingsExport: 'আমার ডেটা এক্সপোর্ট করুন', settingsDeleteAll: 'সব মুছে ফেলুন', settingsDeleteConfirm: 'এটি এই ডিভাইস থেকে আপনার সমস্ত ডেটা স্থায়ীভাবে মুছে ফেলবে। এটি ফিরিয়ে আনা যাবে না।',
+  settingsAbout: 'ধ্রুব সম্পর্কে', settingsCrisisResources: 'সংকট সহায়তা', settingsCurrency: 'মুদ্রা',
+  logTitle: 'নথিভুক্ত করুন', logQuantity: 'কতগুলো?', logWhatTriggered: 'কারণ কী ছিল?', logWhere: 'কোথায় ছিলেন?', logSubmit: 'নথিভুক্ত করুন', logUndo: 'ফিরিয়ে নিন',
+  checkinTitle: 'আজ', checkinMood: 'মেজাজ', checkinSleep: 'গতকাল রাতের ঘুম', checkinHalt: 'এখন এর মধ্যে কিছু?',
+  moodGood: 'ভালো', moodOkay: 'মোটামুটি', moodLow: 'কম', moodRough: 'কঠিন',
+  sleepGood: 'ভালো', sleepOkay: 'মোটামুটি', sleepPoor: 'খারাপ',
+  haltHungry: 'ক্ষুধার্ত', haltAngry: 'রাগান্বিত', haltLonely: 'একা', haltTired: 'ক্লান্ত',
+};
+
+export const translations: Record<Locale, TranslationKeys> = { en, hi, bn };
+
+export function tf(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
+}

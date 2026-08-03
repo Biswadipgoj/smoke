@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "SmokeLess AI",
+    "name": "Dhruv",
     "slug": "smokeless-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "smokeless",
+    "scheme": "dhruv",
     "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundColor": "#0D1F2D"
+        "backgroundColor": "#101426"
       },
       "package": "com.smokeless.ai"
     },
@@ -38,13 +38,30 @@
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
-          "color": "#2DD4BF",
+          "color": "#F0C070",
           "sounds": []
         }
       ],
       "expo-localization",
       "expo-secure-store",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Dhruv uses Face ID to keep your entries private."
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "urge": {
+              "foregroundImage": "./assets/android-icon-monochrome.png",
+              "backgroundColor": "#101426"
+            }
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

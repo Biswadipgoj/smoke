@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
-import { Colors, Radius, Spacing } from '../../constants/theme';
+import { Radius, Spacing } from '../../constants/theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -12,16 +12,14 @@ interface GlassCardProps {
 }
 
 export function GlassCard({ children, style, padding = Spacing.md, elevated = false }: GlassCardProps) {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   return (
     <View
       style={[
         styles.card,
         {
-          backgroundColor: elevated
-            ? isDark ? Colors.bgDarkElevated : Colors.bgLightElevated
-            : colors.bgCard,
-          borderColor: colors.glassBorder,
+          backgroundColor: elevated ? colors.bgElevated : colors.bgCard,
+          borderColor: colors.hairline,
           padding,
         },
         style,

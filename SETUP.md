@@ -1,206 +1,97 @@
-# SmokeLess AI — Setup Guide
+# Dhruv — Setup Guide
 
-## Quick Start
+Dhruv is local-first: everything except a future AI companion (Phase 2,
+not built yet) works fully offline, with no account and no server.
 
-### 1. Install Expo Go on your Android device
-Download **Expo Go** from the Google Play Store.
+## Quick start
 
-### 2. Run the development server
 ```bash
-cd d:\smoke
-npm run android    # Opens on Android emulator (requires Android Studio)
-# or
-npx expo start     # Shows Q
-R code to scan with Expo Go
+npm install
+npx expo start
 ```
 
-### 3. Scan the QR code
-Open **Expo Go** on your Android device, tap **Scan QR code**, and point it at the QR code in the terminal.
+`expo-quick-actions` and `expo-local-authentication` are native config
+plugins, so **the app will not run in plain Expo Go** — build a dev client
+once, then iterate normally:
 
----
-
-## Connect Real Supabase (Optional)
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Copy your **Project URL** and **anon key**
-3. Create a `.env` file in the project root:
-   ```
-   EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-   ```
-4. Install the Supabase client:
-   ```bash
-   npx expo install @supabase/supabase-js
-   ```
-5. Replace the `AsyncStorage` adapter in `src/store/useAppStore.ts` with Supabase calls.
-
-### Supabase Schema (run in SQL Editor)
-```sql
--- Users are managed by Supabase Auth
-
-create table profiles (
-  id uuid references auth.users primary key,
-  locale text default 'en',
-  daily_baseline int default 10,
-  cost_per_pack numeric default 250,
-  cigs_per_pack int default 20,
-  currency text default '₹',
-  goal_type text default 'reduce',
-  motivations text[] default '{}',
-  start_date timestamptz default now(),
-  theme_mode text default 'dark',
-  notifications_enabled boolean default true,
-  onboarding_complete boolean default false,
-  created_at timestamptz default now()
-);
-
-create table smoking_logs (
-  id text primary key,
-  user_id uuid references auth.users not null,
-  timestamp timestamptz not null,
-  type text not null check (type in ('cigarette', 'craving')),
-  context_tag text,
-  note text,
-  created_at timestamptz default now()
-);
-
-create table delay_sessions (
-  id text primary key,
-  user_id uuid references auth.users not null,
-  started_at timestamptz not null,
-  completed_at timestamptz,
-  duration_seconds int not null,
-  intensity int check (intensity between 1 and 5),
-  context_tag text,
-  outcome text not null check (outcome in ('delayed', 'smoked', 'incomplete')),
-  created_at timestamptz default now()
-);
-
-create table achievements (
-  id text not null,
-  user_id uuid references auth.users not null,
-  earned_at timestamptz default now(),
-  primary key (id, user_id)
-);
-
--- Row Level Security
-alter table profiles enable row level security;
-alter table smoking_logs enable row level security;
-alter table delay_sessions enable row level security;
-alter table achievements enable row level security;
-
-create policy "Users own their data" on profiles for all using (auth.uid() = id);
-create policy "Users own their logs" on smoking_logs for all using (auth.uid() = user_id);
-create policy "Users own their sessions" on delay_sessions for all using (auth.uid() = user_id);
-create policy "Users own their achievements" on achievements for all using (auth.uid() = user_id);
-```
-
----
-
-## Build an APK (Android)
-
-### Using Expo EAS (recommended)
 ```bash
-npm install -g eas-cli
-eas login
-eas build:configure
-eas build -p android --profile preview
-```
-This produces a downloadable APK from Expo's build servers — no Android Studio needed.
-
-### Local build (requires Android Studio)
-```bash
+npx expo install expo-dev-client   # already implied by the plugins above
+eas build --profile development --platform android
+# or, with Android Studio installed:
 npx expo run:android
 ```
 
----
-
-## Project Structure
-
-```
-d:\smoke\
-├── app/                    # Expo Router screens
-│   ├── _layout.tsx         # Root layout (fonts, store init)
-│   ├── index.tsx           # Entry router
-│   ├── onboarding.tsx      # 4-step onboarding
-│   ├── delay.tsx           # Craving delay session
-│   ├── log.tsx             # Log cigarette modal
-│   └── (tabs)/
-│       ├── _layout.tsx     # Tab bar layout
-│       ├── index.tsx       # Home / Today
-│       ├── coach.tsx       # AI coaching chat
-│       ├── progress.tsx    # Health timeline + money
-│       ├── achievements.tsx# Milestones + streaks
-│       └── settings.tsx    # Settings
-├── src/
-│   ├── constants/
-│   │   ├── theme.ts        # Design tokens (colors, spacing, fonts)
-│   │   └── translations.ts # English + Hindi + Bengali strings
-│   ├── store/
-│   │   └── useAppStore.ts  # Zustand store + computed metrics
-│   ├── hooks/
-│   │   ├── useTranslation.ts
-│   │   └── useTheme.ts
-│   └── components/ui/
-│       ├── GlassCard.tsx
-│       ├── PrimaryButton.tsx
-│       └── BreathingPacer.tsx
-└── SETUP.md
-```
-
----
-
-## Build an installable APK (not AAB)
-
-The `eas.json` profiles are set to `android.buildType: "apk"`, so every profile
-produces a directly-installable **APK**.
+## Build an installable APK
 
 ```bash
-npm install -g eas-cli      # once
-eas login                   # once
-
-# Fast internal test APK:
-eas build --platform android --profile preview
-
-# Release APK:
-eas build --platform android --profile production
+npm install -g eas-cli
+eas login
+eas build --platform android --profile preview   # or: production
 ```
 
-When the build finishes, EAS prints a URL to download the `.apk`.
+`eas.json` profiles are set to `android.buildType: "apk"`, so every profile
+produces a directly-installable APK (not an AAB).
 
-## EAS Update (over-the-air updates)
-
-The app is wired for OTA updates:
-
-- `app.json` → `updates.url` + `runtimeVersion` (`appVersion` policy)
-- `eas.json` profiles each declare a `channel` (`preview` / `production`)
-- `app/_layout.tsx` checks for and applies the newest bundle on cold start
-
-Publish a JS/asset update (no rebuild needed) to the channel your installed
-APK uses:
+## OTA updates
 
 ```bash
-eas update --channel preview  --message "what changed"   # for preview APKs
-eas update --channel production --message "what changed"  # for release APKs
+eas update --channel preview    --message "what changed"
+eas update --channel production --message "what changed"
 ```
 
-`.github/workflows/eas-update.yml` also publishes to the `preview` channel on
-every push to `main`. **Native or config changes** (new native module, icon,
-permissions, SDK bump) still require a fresh APK build.
+`.github/workflows/eas-update.yml` publishes to the `preview` channel on
+every push to `main`. Native or config changes (new native module, icon,
+permission, SDK bump) still require a fresh build, not just an update.
 
-## Gemini AI Coach — make it work in a build
+## Project structure
 
-The coach reads `EXPO_PUBLIC_GEMINI_API_KEY`. A local `.env` only works for
-`expo start`; **EAS builds and updates need the key stored on EAS** so it is
-inlined into the bundle:
+```
+app/                       Expo Router screens
+  _layout.tsx               root layout — fonts, store hydration, app lock
+  index.tsx                 splash / onboarding-or-tabs router
+  onboarding.tsx             multi-track select, baseline capture, alcohol gate
+  urge.tsx                   the urge flow (name it → rate it → ride it → close it)
+  lapse.tsx                  the lapse protocol (Ember)
+  log.tsx                    quick +1 consumption logging
+  checkin.tsx                 daily mood/sleep/HALT check-in
+  crisis.tsx                  locale- and time-aware crisis resources
+  settings.tsx / add-track.tsx
+  (tabs)/                    Today · Companion (Offline Coach) · You
 
-```bash
-eas env:create --name EXPO_PUBLIC_GEMINI_API_KEY --value "YOUR_KEY" \
-  --visibility sensitive --environment preview
-eas env:create --name EXPO_PUBLIC_GEMINI_API_KEY --value "YOUR_KEY" \
-  --visibility sensitive --environment production
+src/
+  domain/types.ts            Track, Baseline, events, Thread beads, Settings
+  store/useDhruvStore.ts      local Zustand store, AsyncStorage-backed
+  constants/theme.ts           palette, spacing, motion tokens
+  constants/translations.ts    en / hi / bn copy
+  components/motion/           Breath, Tide, Thread, Ember
+  components/AppLockGate.tsx    biometric/device-credential lock screen
+  lib/
+    reclaim.ts                 money/hours/sleep reclaim engine
+    urgeDecay.ts                personal urge-decay stat
+    offlineCoach.ts              scripted intervention library
+    crisis.ts                    helpline resolution
+    milestones.ts                 health/financial milestones
+    haptics.ts                    semantic haptic wrapper
+    quickActions.ts                long-press launcher shortcut
 ```
 
-Then rebuild (or `eas update`) so the key ships with the app. The model used is
-`gemini-flash-latest`; responses are tuned to sound like a real person (plain
-sentences, the user's language, no markdown or "as an AI" disclaimers).
+## Known gaps versus the full blueprint
+
+These are deliberate scope cuts for a managed-Expo build, not oversights:
+
+- **Home-screen widget & Quick Settings tile** are not implemented. Both
+  need real native code (Glance/AppWidget, TileService) that isn't exposed
+  by any current managed-Expo package without a custom native module. The
+  long-press launcher shortcut (`expo-quick-actions`) is implemented instead
+  as the fastest available "reach the urge screen from outside the app" path.
+- **SQLCipher-grade database encryption** isn't available in the managed
+  workflow; storage is AsyncStorage plus `expo-secure-store`/Keystore for
+  small secrets. Journal/lapse-context text isn't separately encrypted at
+  rest beyond the OS-level storage sandbox.
+- **`VibrationEffect.Composition` haptic primitives** aren't exposed by
+  `expo-haptics`; the semantic haptic wrapper (`src/lib/haptics.ts`) maps
+  onto the iOS-style impact/notification/selection API instead.
+- **AI companion (doc 02)** is intentionally not built — V1 ships only the
+  scripted Offline Coach, exactly as the blueprint's own roadmap specifies.
+- **hi/bn copy** is a best-effort draft, not reviewed by a native speaker.
+  Treat especially the crisis and alcohol-gate strings as provisional.
