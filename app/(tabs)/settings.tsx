@@ -261,7 +261,7 @@ export default function SettingsScreen() {
           />
         </GlassCard>
 
-        <View style={{ height: Spacing.xxl }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );

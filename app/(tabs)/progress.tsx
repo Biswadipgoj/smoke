@@ -246,7 +246,7 @@ export default function ProgressScreen() {
           );
         })}
 
-        <View style={{ height: Spacing.xxl }} />
+        <View style={{ height: 120 }} />
       </Animated.ScrollView>
     </SafeAreaView>
   );

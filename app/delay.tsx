@@ -17,15 +17,19 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useAppStore, DelaySession, ContextTag, computeMoneySaved } from '../src/store/useAppStore';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
 import { BreathingPacer } from '../src/components/ui/BreathingPacer';
-import { PrimaryButton } from '../src/components/ui/PrimaryButton';
+import { GradientButton } from '../src/components/ui/GradientButton';
+import { Surface } from '../src/components/ui/Surface';
 import { LivingBackground } from '../src/components/ui/LivingBackground';
 import { getPersona } from '../src/constants/personas';
 import { cigsAvoided, cleanBreathingMinutes, moneyStory, humanizeMinutes } from '../src/lib/narrative';
+
+type IconName = keyof typeof Ionicons.glyphMap;
 
 type InterventionType = 'calming' | 'cognitive' | 'incentive' | 'physical' | 'distraction';
 type Phase = 'menu' | 'active' | 'outcome';
@@ -56,12 +60,12 @@ export default function InterventionScreen() {
     boredom: t.logContextBoredom, alcohol: t.logContextAlcohol, other: t.logContextOther,
   };
 
-  const interventions: { type: InterventionType; emoji: string; label: string; desc: string; accent: string }[] = [
-    { type: 'calming', emoji: '🫁', label: t.interveneCalming, desc: t.interveneCalmingDesc, accent: Colors.sky },
-    { type: 'cognitive', emoji: '🧭', label: t.interveneCognitive, desc: t.interveneCognitiveDesc, accent: Colors.aurora },
-    { type: 'incentive', emoji: '💰', label: t.interveneIncentive, desc: t.interveneIncentiveDesc, accent: Colors.gold },
-    { type: 'physical', emoji: '💧', label: t.intervenePhysical, desc: t.intervenePhysicalDesc, accent: Colors.primary },
-    { type: 'distraction', emoji: '🎯', label: t.interveneDistraction, desc: t.interveneDistractionDesc, accent: Colors.rose },
+  const interventions: { type: InterventionType; icon: IconName; label: string; desc: string; accent: string }[] = [
+    { type: 'calming', icon: 'leaf-outline', label: t.interveneCalming, desc: t.interveneCalmingDesc, accent: Colors.sky },
+    { type: 'cognitive', icon: 'compass-outline', label: t.interveneCognitive, desc: t.interveneCognitiveDesc, accent: Colors.aurora },
+    { type: 'incentive', icon: 'wallet-outline', label: t.interveneIncentive, desc: t.interveneIncentiveDesc, accent: Colors.gold },
+    { type: 'physical', icon: 'walk-outline', label: t.intervenePhysical, desc: t.intervenePhysicalDesc, accent: Colors.primary },
+    { type: 'distraction', icon: 'shapes-outline', label: t.interveneDistraction, desc: t.interveneDistractionDesc, accent: Colors.rose },
   ];
 
   const startIntervention = (it: InterventionType) => {
@@ -123,7 +127,7 @@ export default function InterventionScreen() {
       <LivingBackground />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => (phase === 'menu' ? router.back() : backToMenu())} style={styles.closeBtn}>
-          <Text style={styles.closeText}>{phase === 'menu' ? '✕' : '‹'}</Text>
+          <Ionicons name={phase === 'menu' ? 'close' : 'chevron-back'} size={24} color={Colors.textDarkSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>{t.interveneTitle}</Text>
         <View style={{ width: 40 }} />
@@ -164,19 +168,17 @@ export default function InterventionScreen() {
             <Text style={[styles.sectionLabel, { marginTop: Spacing.md }]}>{t.interveneTitle}</Text>
             {interventions.map((it, i) => (
               <Animated.View key={it.type} entering={FadeInDown.duration(400).delay(i * 60)}>
-                <TouchableOpacity
-                  style={[styles.interventionCard, { borderColor: `${it.accent}44` }]}
-                  onPress={() => startIntervention(it.type)}
-                  activeOpacity={0.85}
-                >
-                  <View style={[styles.interventionIcon, { backgroundColor: `${it.accent}22` }]}>
-                    <Text style={styles.interventionEmoji}>{it.emoji}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.interventionLabel, { color: it.accent }]}>{it.label}</Text>
-                    <Text style={styles.interventionDesc}>{it.desc}</Text>
-                  </View>
-                  <Text style={[styles.interventionChevron, { color: it.accent }]}>›</Text>
+                <TouchableOpacity onPress={() => startIntervention(it.type)} activeOpacity={0.85}>
+                  <Surface accent={it.accent} style={styles.interventionCard} padding={Spacing.md}>
+                    <View style={[styles.interventionIcon, { backgroundColor: `${it.accent}22` }]}>
+                      <Ionicons name={it.icon} size={22} color={it.accent} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.interventionLabel, { color: it.accent }]}>{it.label}</Text>
+                      <Text style={styles.interventionDesc}>{it.desc}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={it.accent} />
+                  </Surface>
                 </TouchableOpacity>
               </Animated.View>
             ))}
@@ -207,7 +209,7 @@ export default function InterventionScreen() {
                 {t[`cognitivePrompt${promptIndex + 1}` as 'cognitivePrompt1']}
               </Text>
             </View>
-            <PrimaryButton label={t.interveneReflectDone} onPress={goToOutcome} size="lg" style={styles.fullBtn} />
+            <GradientButton label={t.interveneReflectDone} icon="checkmark" gradient="cta" onPress={goToOutcome} style={styles.fullBtn} />
             <ChooseAnother onPress={backToMenu} label={t.interveneChooseAnother} />
           </Animated.View>
         )}
@@ -226,7 +228,7 @@ export default function InterventionScreen() {
                 <Text style={styles.stepText}>{step}</Text>
               </View>
             ))}
-            <PrimaryButton label={t.interveneReflectDone} onPress={goToOutcome} size="lg" style={styles.fullBtn} />
+            <GradientButton label={t.interveneReflectDone} icon="checkmark" gradient="cta" onPress={goToOutcome} style={styles.fullBtn} />
             <ChooseAnother onPress={backToMenu} label={t.interveneChooseAnother} />
           </Animated.View>
         )}
@@ -240,7 +242,7 @@ export default function InterventionScreen() {
                 {t[`distractionTask${taskIndex + 1}` as 'distractionTask1']}
               </Text>
             </View>
-            <PrimaryButton label={t.interveneReflectDone} onPress={goToOutcome} size="lg" style={styles.fullBtn} />
+            <GradientButton label={t.interveneReflectDone} icon="checkmark" gradient="cta" onPress={goToOutcome} style={styles.fullBtn} />
             <ChooseAnother onPress={backToMenu} label={t.interveneChooseAnother} />
           </Animated.View>
         )}
@@ -304,7 +306,7 @@ function IncentiveView({ onDone, onBack }: { onDone: () => void; onBack: () => v
           </View>
         </Animated.View>
       ))}
-      <PrimaryButton label={t.interveneReflectDone} onPress={onDone} size="lg" style={styles.fullBtn} />
+      <GradientButton label={t.interveneReflectDone} icon="checkmark" gradient="cta" onPress={onDone} style={styles.fullBtn} />
       <ChooseAnother onPress={onBack} label={t.interveneChooseAnother} />
     </Animated.View>
   );
@@ -314,7 +316,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bgDark },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   closeBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: Colors.textDarkSecondary, fontSize: 26 },
   title: { fontFamily: FontFamily.semiBold, fontSize: FontSize.md, color: Colors.textDark },
   scroll: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   subtitle: { fontFamily: FontFamily.regular, fontSize: FontSize.base, color: Colors.textDarkSecondary, textAlign: 'center', lineHeight: FontSize.base * 1.6, marginBottom: Spacing.xl, marginTop: Spacing.sm },
@@ -331,12 +332,10 @@ const styles = StyleSheet.create({
   tagText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.textDarkSecondary },
   tagTextActive: { color: Colors.primary },
 
-  interventionCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderWidth: 1.5, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.sm, backgroundColor: Colors.bgDarkCard },
-  interventionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  interventionEmoji: { fontSize: 24 },
+  interventionCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.sm },
+  interventionIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   interventionLabel: { fontFamily: FontFamily.semiBold, fontSize: FontSize.base, marginBottom: 2 },
   interventionDesc: { fontFamily: FontFamily.regular, fontSize: FontSize.sm, color: Colors.textDarkSecondary, lineHeight: FontSize.sm * 1.45 },
-  interventionChevron: { fontSize: 26, fontFamily: FontFamily.regular },
 
   centered: { alignItems: 'center', paddingTop: Spacing.lg },
   timerText: { fontFamily: FontFamily.bold, fontSize: FontSize.xxxl, color: Colors.textDark, letterSpacing: 2 },

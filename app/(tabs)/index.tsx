@@ -1,17 +1,13 @@
 // app/(tabs)/index.tsx — The Living Home
-// A screen that breathes with the time of day, speaks in your companion's voice,
-// and tells your progress back to you as a story rather than a spreadsheet.
+// A single, authored composition: a breathing aura hero that shows the day at a
+// glance, your companion's voice, and progress told as a story. Vector icons,
+// gradient actions, real depth.
 import React, { useEffect, useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, Layout, SlideInUp, ZoomIn, FadeOut } from 'react-native-reanimated';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Animated, { FadeIn, FadeInDown, ZoomIn, FadeOut } from 'react-native-reanimated';
 import {
   useAppStore,
   computeMoneySaved,
@@ -20,45 +16,35 @@ import {
 } from '../../src/store/useAppStore';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
-import { Colors, FontFamily, FontSize, Spacing, Radius, getAtmosphere, getDayPhase } from '../../src/constants/theme';
-import { GlassCard } from '../../src/components/ui/GlassCard';
+import { Colors, FontFamily, FontSize, Spacing, Radius, getAtmosphere, getDayPhase, Surfaces } from '../../src/constants/theme';
 import { LivingBackground } from '../../src/components/ui/LivingBackground';
+import { Surface } from '../../src/components/ui/Surface';
+import { StatTile } from '../../src/components/ui/StatTile';
+import { SectionHeader } from '../../src/components/ui/SectionHeader';
+import { AuraRing } from '../../src/components/ui/AuraRing';
+import { GradientButton } from '../../src/components/ui/GradientButton';
 import { getPersona } from '../../src/constants/personas';
-import {
-  cigsAvoided,
-  cleanBreathingMinutes,
-  lifeMinutesRegained,
-  moneyStory,
-  humanizeMinutes,
-} from '../../src/lib/narrative';
+import { cigsAvoided, cleanBreathingMinutes, lifeMinutesRegained, moneyStory, humanizeMinutes } from '../../src/lib/narrative';
 
-// ── Live timer helper ─────────────────────────────────────────────────
 function useLiveTimer(lastCigTime: Date | null) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  if (!lastCigTime) return { hours: 0, minutes: 0, seconds: 0, totalMinutes: 0 };
+  if (!lastCigTime) return { hours: 0, minutes: 0, totalMinutes: 0 };
   const diff = Math.max(0, now - lastCigTime.getTime());
-  const totalMinutes = diff / 60000;
-  return {
-    hours: Math.floor(diff / 3600000),
-    minutes: Math.floor((diff % 3600000) / 60000),
-    seconds: Math.floor((diff % 60000) / 1000),
-    totalMinutes,
-  };
+  return { hours: Math.floor(diff / 3600000), minutes: Math.floor((diff % 3600000) / 60000), totalMinutes: diff / 60000 };
 }
 
-// ── Companion voice: a warm, context-aware nudge ───────────────────────
-function getCompanionNudge(cigsToday: number, baseline: number, streak: number, minutesSinceLast: number): { emoji: string; message: string } {
-  if (cigsToday === 0) return { emoji: '🌟', message: "Zero today — you're shining. Every smoke-free hour is your body quietly healing." };
-  if (minutesSinceLast > 180) return { emoji: '💪', message: `${Math.floor(minutesSinceLast / 60)} hours since your last one. Your lungs are thanking you right now.` };
-  if (minutesSinceLast > 60) return { emoji: '🌿', message: `Over an hour smoke-free. That's real strength — let's stretch it a little further.` };
-  if (cigsToday < baseline / 2) return { emoji: '🎯', message: `Only ${cigsToday} today — less than half your baseline. That's genuinely remarkable progress.` };
-  if (cigsToday < baseline) return { emoji: '📉', message: `${baseline - cigsToday} fewer than your baseline today. Every one you skip counts.` };
-  if (streak > 0) return { emoji: '🔥', message: `${streak}-day streak of reducing. You're building a whole new pattern, one choice at a time.` };
-  return { emoji: '💙', message: "You're here, you're honest, and that's brave. Small steps, gently, lead somewhere real." };
+function getCompanionNudge(cigsToday: number, baseline: number, streak: number, minutesSinceLast: number): string {
+  if (cigsToday === 0) return "Zero so far today — you're shining. Every smoke-free hour is your body quietly healing.";
+  if (minutesSinceLast > 180) return `${Math.floor(minutesSinceLast / 60)} hours since your last one. Your lungs are thanking you right now.`;
+  if (minutesSinceLast > 60) return "Over an hour smoke-free. That's real strength — let's stretch it a little further.";
+  if (cigsToday < baseline / 2) return `Only ${cigsToday} today — less than half your baseline. Genuinely remarkable.`;
+  if (cigsToday < baseline) return `${baseline - cigsToday} fewer than your baseline today. Every one you skip counts.`;
+  if (streak > 0) return `${streak}-day reducing streak. You're building a whole new pattern, one choice at a time.`;
+  return "You're here, you're honest, and that's brave. Small steps, gently, lead somewhere real.";
 }
 
 function greetingForPhase(t: any): string {
@@ -69,20 +55,19 @@ function greetingForPhase(t: any): string {
   return t.homeGreetingNight;
 }
 
-// A compact narrative stat tile.
-function StoryTile({ value, unit, title, caption, accent }: {
-  value: string; unit?: string; title: string; caption: string; accent: string;
-}) {
-  const { colors } = useTheme();
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function QuickAction({ icon, label, color, onPress }: { icon: IconName; label: string; color: string; onPress: () => void }) {
   return (
-    <GlassCard style={styles.storyTile}>
-      <Text style={styles.storyTitle} numberOfLines={1}>{title}</Text>
-      <View style={styles.storyValueRow}>
-        <Text style={[styles.storyValue, { color: accent }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
-        {unit ? <Text style={[styles.storyUnit, { color: accent }]}>{unit}</Text> : null}
+    <Pressable
+      style={({ pressed }) => [styles.quickAction, { borderColor: `${color}44`, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+      onPress={onPress}
+    >
+      <View style={[styles.quickIcon, { backgroundColor: `${color}1F` }]}>
+        <Ionicons name={icon} size={20} color={color} />
       </View>
-      <Text style={[styles.storyCaption, { color: colors.textMuted }]}>{caption}</Text>
-    </GlassCard>
+      <Text style={[styles.quickLabel, { color }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -93,8 +78,7 @@ export default function HomeScreen() {
   const logs = useAppStore((s) => s.logs);
   const addLog = useAppStore((s) => s.addLog);
 
-  const [showQuickLogConfirm, setShowQuickLogConfirm] = useState(false);
-
+  const [toast, setToast] = useState(false);
   const atmosphere = getAtmosphere();
   const persona = getPersona(profile?.companionPersona);
 
@@ -102,12 +86,11 @@ export default function HomeScreen() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayCigs = logs.filter((l) => {
+  const cigsToday = logs.filter((l) => {
     if (l.type !== 'cigarette') return false;
     const d = new Date(l.timestamp); d.setHours(0, 0, 0, 0);
     return d.getTime() === today.getTime();
-  });
-  const cigsToday = todayCigs.length;
+  }).length;
 
   const lastCig = useMemo(() => {
     const cigs = logs.filter((l) => l.type === 'cigarette').sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -119,21 +102,26 @@ export default function HomeScreen() {
   const currentStreak = computeCurrentStreak(logs);
   const longestStreak = computeLongestStreak(logs);
   const baseline = profile.dailyBaseline;
-  const progressFraction = Math.min(1, Math.max(0, 1 - cigsToday / baseline));
+  const pct = Math.round(Math.min(1, Math.max(0, 1 - cigsToday / baseline)) * 100);
+  const fraction = cigsToday === 0 ? 1 : Math.min(1, Math.max(0, 1 - cigsToday / baseline));
   const nudge = getCompanionNudge(cigsToday, baseline, currentStreak, timer.totalMinutes);
 
-  // Narrative figures
   const cigsTotal = logs.filter((l) => l.type === 'cigarette').length;
   const avoided = cigsAvoided(baseline, profile.startDate, cigsTotal);
   const cleanMin = cleanBreathingMinutes(avoided);
   const lifeMin = lifeMinutesRegained(avoided);
   const story = moneyStory(money.total, profile.costPerPack, t);
 
+  const statusLabel = cigsToday === 0 ? 'Smoke-free today' : pct > 0 ? `${pct}% below baseline` : "Today's your day";
+  const ringColors = atmosphere.phase === 'evening' || atmosphere.phase === 'night'
+    ? (['#8B7BFF', '#2DD4BF', '#38BDF8'] as const)
+    : (['#5EEAD4', '#2DD4BF', '#38BDF8'] as const);
+
   const handleQuickLog = () => {
     addLog({ id: `cig_${Date.now()}`, timestamp: new Date().toISOString(), type: 'cigarette' });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setShowQuickLogConfirm(true);
-    setTimeout(() => setShowQuickLogConfirm(false), 2000);
+    setToast(true);
+    setTimeout(() => setToast(false), 2000);
   };
 
   return (
@@ -141,241 +129,145 @@ export default function HomeScreen() {
       {isDark && <LivingBackground atmosphere={atmosphere} />}
       <Animated.ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.textSecondary }]}>{greetingForPhase(t)}</Text>
-          <View style={styles.companionLine}>
-            <Text style={styles.companionEmoji}>{persona.emoji}</Text>
-            <Text style={[styles.companionText, { color: colors.textMuted }]}>
-              {t.companionWord} · {persona.name}
+        <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: colors.text }]}>{greetingForPhase(t)}</Text>
+            <View style={styles.companionChip}>
+              <Text style={styles.companionEmoji}>{persona.emoji}</Text>
+              <Text style={[styles.companionText, { color: colors.textSecondary }]}>{persona.name}</Text>
+            </View>
+          </View>
+          <Pressable onPress={() => router.push('/(tabs)/settings')} hitSlop={10} style={[styles.avatarBtn, { borderColor: Surfaces.hairlineStrong }]}>
+            <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+          </Pressable>
+        </Animated.View>
+
+        {/* Hero aura */}
+        <Animated.View entering={FadeIn.duration(700).delay(150)} style={styles.hero}>
+          <AuraRing fraction={fraction} colors={ringColors} size={264}>
+            <Text style={[styles.ringNumber, { color: colors.text }]}>{cigsToday}</Text>
+            <Text style={[styles.ringOf, { color: colors.textMuted }]}>of {baseline} today</Text>
+            <View style={[styles.statusPill, { backgroundColor: `${Colors.primary}1A`, borderColor: `${Colors.primary}40` }]}>
+              <Ionicons name={cigsToday === 0 ? 'sparkles' : 'trending-down'} size={12} color={Colors.primaryLight} />
+              <Text style={styles.statusText}>{statusLabel}</Text>
+            </View>
+          </AuraRing>
+
+          <View style={styles.cleanRow}>
+            <Ionicons name="time-outline" size={15} color={colors.textSecondary} />
+            <Text style={[styles.cleanText, { color: colors.textSecondary }]}>
+              {lastCig ? `Clean for ${timer.hours > 0 ? `${timer.hours}h ` : ''}${timer.minutes}m` : 'Your first clean stretch starts now'}
             </Text>
           </View>
         </Animated.View>
 
         {/* Companion nudge */}
-        <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-          <GlassCard style={[styles.nudgeCard, { borderColor: `${persona.accent}55` }]} elevated>
+        <Animated.View entering={FadeInDown.duration(500).delay(250)}>
+          <Surface accent={persona.accent} style={styles.nudgeCard} padding={Spacing.md}>
             <View style={[styles.nudgeAvatar, { backgroundColor: `${persona.accent}22` }]}>
-              <Text style={styles.nudgeEmoji}>{nudge.emoji}</Text>
+              <Text style={styles.nudgeEmoji}>{persona.emoji}</Text>
             </View>
-            <Text style={[styles.nudgeText, { color: colors.text }]}>{nudge.message}</Text>
-          </GlassCard>
+            <Text style={[styles.nudgeText, { color: colors.text }]}>{nudge}</Text>
+          </Surface>
         </Animated.View>
 
-        {/* Live timer */}
-        {lastCig && (
-          <Animated.View entering={FadeInDown.duration(500).delay(200)}>
-            <GlassCard style={styles.timerCard}>
-              <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>Time since last cigarette</Text>
-              <View style={styles.timerRow}>
-                <TimerUnit value={timer.hours} label="hrs" muted={colors.textMuted} />
-                <Text style={styles.timerColon}>:</Text>
-                <TimerUnit value={timer.minutes} label="min" muted={colors.textMuted} />
-                <Text style={styles.timerColon}>:</Text>
-                <TimerUnit value={timer.seconds} label="sec" muted={colors.textMuted} />
-              </View>
-              {timer.totalMinutes > 20 && (
-                <Text style={styles.timerMilestone}>
-                  {timer.totalMinutes > 720 ? '❤️ Heart rate normalizing' :
-                   timer.totalMinutes > 60 ? '🫁 Carbon monoxide dropping' :
-                   '❤️ Blood pressure improving'}
-                </Text>
-              )}
-            </GlassCard>
-          </Animated.View>
-        )}
-
-        {/* Today */}
-        <Animated.View entering={FadeInDown.duration(500).delay(300)}>
-          <GlassCard style={styles.todayCard} elevated>
-            <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>{t.homeTodayCount}</Text>
-            <View style={styles.todayRow}>
-              <Text style={styles.bigNumber}>{cigsToday}</Text>
-              <Text style={[styles.baselineText, { color: colors.textMuted }]}>/ {baseline} {t.homeBaselineCount}</Text>
-            </View>
-            <View style={[styles.progressTrack, { backgroundColor: isDark ? Colors.bgDarkElevated : '#E5F5F3' }]}>
-              <Animated.View style={[styles.progressFill, { width: `${Math.round(progressFraction * 100)}%` as any }]} layout={Layout.springify().damping(15)} />
-            </View>
-            {progressFraction > 0 && (
-              <Text style={styles.reductionText}>{Math.round(progressFraction * 100)}% below baseline ✨</Text>
-            )}
-          </GlassCard>
-        </Animated.View>
-
-        {/* ── YOUR STORY SO FAR ── */}
-        <Animated.View entering={FadeInDown.duration(500).delay(400)}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.homeStorySectionTitle}</Text>
-          <View style={styles.storyRow}>
-            <StoryTile
-              value={humanizeMinutes(cleanMin)}
-              unit={cleanMin < 60 ? t.unitMin : undefined}
-              title={t.homeCleanAirTitle}
-              caption={t.homeCleanAirCaption}
-              accent={Colors.sky}
-            />
-            <View style={{ width: Spacing.sm }} />
-            <StoryTile
-              value={String(avoided)}
-              title={t.homeAvoidedTitle}
-              caption={t.homeAvoidedCaption}
-              accent={Colors.primary}
-            />
+        {/* Story grid */}
+        <Animated.View entering={FadeInDown.duration(500).delay(350)}>
+          <SectionHeader title={t.homeStorySectionTitle} icon="book-outline" accent={Colors.primaryLight} />
+          <View style={styles.grid}>
+            <StatTile icon="pulse" value={humanizeMinutes(cleanMin)} unit={cleanMin < 60 ? t.unitMin : undefined} title={t.homeCleanAirTitle} caption={t.homeCleanAirCaption} accent={Colors.sky} style={{ marginRight: Spacing.sm }} />
+            <StatTile icon="ban" value={String(avoided)} title={t.homeAvoidedTitle} caption={t.homeAvoidedCaption} accent={Colors.primary} />
           </View>
-          <View style={[styles.storyRow, { marginTop: Spacing.sm }]}>
-            <StoryTile
-              value={humanizeMinutes(lifeMin)}
-              unit={lifeMin < 60 ? t.unitMin : undefined}
-              title={t.homeLifeTitle}
-              caption={t.homeLifeCaption}
-              accent={Colors.rose}
-            />
-            <View style={{ width: Spacing.sm }} />
-            <StoryTile
-              value={`${profile.currency}${money.total.toFixed(0)}`}
-              title={t.homeMoneySaved}
-              caption={`${t.homeMoneyPrefix} ${story}`}
-              accent={Colors.gold}
-            />
+          <View style={[styles.grid, { marginTop: Spacing.sm }]}>
+            <StatTile icon="heart" value={humanizeMinutes(lifeMin)} unit={lifeMin < 60 ? t.unitMin : undefined} title={t.homeLifeTitle} caption={t.homeLifeCaption} accent={Colors.rose} style={{ marginRight: Spacing.sm }} />
+            <StatTile icon="wallet" value={`${profile.currency}${money.total.toFixed(0)}`} title={t.homeMoneySaved} caption={`${t.homeMoneyPrefix} ${story}`} accent={Colors.gold} />
           </View>
         </Animated.View>
 
-        {/* Streak strip */}
-        <Animated.View entering={FadeInDown.duration(500).delay(500)}>
-          <GlassCard style={styles.streakStrip}>
-            <Text style={styles.streakFire}>🔥</Text>
-            <Text style={[styles.streakText, { color: colors.text }]}>
-              <Text style={{ color: Colors.primary, fontFamily: FontFamily.bold }}>{currentStreak}</Text>
-              {` ${t.homeStreakDays} · `}
-              <Text style={{ color: colors.textSecondary }}>{t.homeStreakBest} {longestStreak}</Text>
-            </Text>
-          </GlassCard>
+        {/* Streak */}
+        <Animated.View entering={FadeInDown.duration(500).delay(450)}>
+          <Surface style={styles.streakStrip} padding={Spacing.md}>
+            <View style={[styles.streakIcon, { backgroundColor: `${Colors.amber}1F` }]}>
+              <Ionicons name="flame" size={20} color={Colors.amber} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.streakValue, { color: colors.text }]}>
+                {currentStreak} <Text style={[styles.streakUnit, { color: colors.textSecondary }]}>{t.homeStreakDays}</Text>
+              </Text>
+              <Text style={[styles.streakSub, { color: colors.textMuted }]}>{t.homeStreakBest} · {longestStreak} {t.homeStreakDays}</Text>
+            </View>
+          </Surface>
         </Animated.View>
 
         {/* Quick actions */}
-        <Animated.View entering={FadeInDown.duration(500).delay(600)} style={styles.quickRow}>
-          <TouchableOpacity
-            style={[styles.quickAction, { marginRight: Spacing.sm, backgroundColor: `${Colors.amber}18`, borderColor: `${Colors.amber}44` }]}
-            onPress={handleQuickLog}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.quickActionEmoji}>🚬</Text>
-            <Text style={[styles.quickActionLabel, { color: Colors.amber }]}>Quick Log</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickAction, { marginHorizontal: Spacing.xs, borderColor: colors.glassBorder }]}
-            onPress={() => router.push('/log')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.quickActionEmoji}>📝</Text>
-            <Text style={[styles.quickActionLabel, { color: colors.textSecondary }]}>+ Details</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickAction, { marginLeft: Spacing.sm, borderColor: `${Colors.primary}44` }]}
-            onPress={() => {
-              addLog({ id: `crv_${Date.now()}`, timestamp: new Date().toISOString(), type: 'craving' });
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.quickActionEmoji}>✋</Text>
-            <Text style={[styles.quickActionLabel, { color: Colors.primary }]}>Resisted!</Text>
-          </TouchableOpacity>
+        <Animated.View entering={FadeInDown.duration(500).delay(550)} style={styles.quickRow}>
+          <QuickAction icon="add" label="Quick log" color={Colors.amber} onPress={handleQuickLog} />
+          <View style={{ width: Spacing.sm }} />
+          <QuickAction icon="create-outline" label="Details" color={colors.textSecondary} onPress={() => router.push('/log')} />
+          <View style={{ width: Spacing.sm }} />
+          <QuickAction icon="shield-checkmark" label="Resisted" color={Colors.primary} onPress={() => {
+            addLog({ id: `crv_${Date.now()}`, timestamp: new Date().toISOString(), type: 'craving' });
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }} />
         </Animated.View>
 
-        {showQuickLogConfirm && (
-          <Animated.View entering={ZoomIn.duration(300)} exiting={FadeOut.duration(300)} style={styles.quickToast}>
-            <Text style={styles.quickToastText}>Logged ✓ — No judgment, just tracking 💙</Text>
+        {toast && (
+          <Animated.View entering={ZoomIn.duration(280)} exiting={FadeOut.duration(280)} style={[styles.toast, { backgroundColor: `${Colors.primary}22` }]}>
+            <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
+            <Text style={styles.toastText}>Logged — no judgment, just tracking</Text>
           </Animated.View>
         )}
 
-        <View style={{ height: 130 }} />
+        <View style={{ height: 140 }} />
       </Animated.ScrollView>
 
-      {/* FAB — Ride the wave (intervention hub) */}
-      <Animated.View entering={SlideInUp.springify().damping(12).delay(800)} style={styles.fabContainer}>
-        <TouchableOpacity style={styles.fab} onPress={() => router.push('/delay')} activeOpacity={0.85}>
-          <Text style={styles.fabIcon}>🌊</Text>
-          <Text style={styles.fabText}>{t.homeCravingBtn}</Text>
-        </TouchableOpacity>
+      {/* Craving CTA */}
+      <Animated.View entering={FadeInDown.springify().damping(15).delay(700)} style={styles.fab}>
+        <GradientButton label={t.homeCravingBtn} icon="water-outline" gradient="aura" onPress={() => router.push('/delay')} />
       </Animated.View>
     </SafeAreaView>
   );
 }
 
-function TimerUnit({ value, label, muted }: { value: number; label: string; muted: string }) {
-  return (
-    <View style={styles.timerUnit}>
-      <Text style={styles.timerDigit}>{String(value).padStart(2, '0')}</Text>
-      <Text style={[styles.timerUnitLabel, { color: muted }]}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg },
-  header: { marginBottom: Spacing.md },
-  greeting: { fontFamily: FontFamily.bold, fontSize: FontSize.xxl, letterSpacing: -0.5, marginBottom: 4 },
-  companionLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  companionEmoji: { fontSize: 14 },
-  companionText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, textTransform: 'capitalize' },
+  scroll: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
 
-  // Companion nudge
-  nudgeCard: { marginBottom: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderWidth: 1.5 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
+  greeting: { fontFamily: FontFamily.bold, fontSize: FontSize.xxl, letterSpacing: -0.6 },
+  companionChip: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  companionEmoji: { fontSize: 14 },
+  companionText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
+  avatarBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+
+  hero: { alignItems: 'center', marginVertical: Spacing.md },
+  ringNumber: { fontFamily: FontFamily.bold, fontSize: 68, letterSpacing: -2, lineHeight: 74 },
+  ringOf: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, marginTop: -2 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: Spacing.sm, paddingHorizontal: Spacing.sm + 2, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1 },
+  statusText: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xs, color: Colors.primaryLight },
+  cleanRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md },
+  cleanText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
+
+  nudgeCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.xs },
   nudgeAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   nudgeEmoji: { fontSize: 24 },
   nudgeText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, lineHeight: FontSize.base * 1.5, flex: 1 },
 
-  // Timer
-  timerCard: { marginBottom: Spacing.md, alignItems: 'center' },
-  timerLabel: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, marginBottom: Spacing.sm },
-  timerRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  timerUnit: { alignItems: 'center' },
-  timerDigit: { fontFamily: FontFamily.bold, fontSize: 36, color: Colors.primary, letterSpacing: 1, minWidth: 52, textAlign: 'center' },
-  timerColon: { fontFamily: FontFamily.bold, fontSize: 28, color: Colors.primary, marginBottom: 14 },
-  timerUnitLabel: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, marginTop: -2 },
-  timerMilestone: { fontFamily: FontFamily.medium, fontSize: FontSize.xs, color: Colors.primaryLight, marginTop: Spacing.sm },
+  grid: { flexDirection: 'row' },
 
-  // Today
-  todayCard: { marginBottom: Spacing.md },
-  cardLabel: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, marginBottom: Spacing.xs },
-  todayRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, marginBottom: Spacing.md },
-  bigNumber: { fontFamily: FontFamily.bold, fontSize: FontSize.xxxl, color: Colors.primary },
-  baselineText: { fontFamily: FontFamily.regular, fontSize: FontSize.base },
-  progressTrack: { height: 6, borderRadius: 3, marginBottom: Spacing.sm },
-  progressFill: { height: 6, borderRadius: 3, backgroundColor: Colors.primary },
-  reductionText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.primaryLight },
+  streakStrip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.lg },
+  streakIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  streakValue: { fontFamily: FontFamily.bold, fontSize: FontSize.xl, letterSpacing: -0.5 },
+  streakUnit: { fontFamily: FontFamily.medium, fontSize: FontSize.base },
+  streakSub: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, marginTop: 2 },
 
-  // Story
-  sectionTitle: { fontFamily: FontFamily.semiBold, fontSize: FontSize.md, marginBottom: Spacing.sm, marginTop: Spacing.xs },
-  storyRow: { flexDirection: 'row' },
-  storyTile: { flex: 1 },
-  storyTitle: { fontFamily: FontFamily.medium, fontSize: FontSize.xs, color: Colors.textDarkSecondary },
-  storyValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6, marginBottom: 4 },
-  storyValue: { fontFamily: FontFamily.bold, fontSize: FontSize.xl },
-  storyUnit: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
-  storyCaption: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, lineHeight: FontSize.xs * 1.4 },
+  quickRow: { flexDirection: 'row', marginTop: Spacing.md },
+  quickAction: { flex: 1, borderWidth: 1.5, borderRadius: Radius.lg, alignItems: 'center', paddingVertical: Spacing.md, gap: 8, backgroundColor: Surfaces.card },
+  quickIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  quickLabel: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xs },
 
-  // Streak
-  streakStrip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md, marginBottom: Spacing.md },
-  streakFire: { fontSize: 20 },
-  streakText: { fontFamily: FontFamily.medium, fontSize: FontSize.base },
+  toast: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, padding: Spacing.sm, marginTop: Spacing.md },
+  toastText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.primary },
 
-  // Quick actions
-  quickRow: { flexDirection: 'row' },
-  quickAction: { flex: 1, borderWidth: 1.5, borderRadius: Radius.lg, alignItems: 'center', paddingVertical: Spacing.md, gap: 4 },
-  quickActionEmoji: { fontSize: 22 },
-  quickActionLabel: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xs },
-  quickToast: { backgroundColor: `${Colors.primary}22`, borderRadius: Radius.md, padding: Spacing.sm, marginTop: Spacing.md, alignItems: 'center' },
-  quickToastText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.primary },
-
-  // FAB
-  fabContainer: { position: 'absolute', bottom: 90, left: Spacing.lg, right: Spacing.lg, alignItems: 'center' },
-  fab: {
-    backgroundColor: Colors.primary, borderRadius: Radius.full,
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10,
-  },
-  fabIcon: { fontSize: 22 },
-  fabText: { fontFamily: FontFamily.bold, fontSize: FontSize.md, color: Colors.bgDark, letterSpacing: 0.3 },
+  fab: { position: 'absolute', bottom: 96, left: Spacing.lg, right: Spacing.lg },
 });

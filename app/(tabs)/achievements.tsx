@@ -181,7 +181,7 @@ export default function AchievementsScreen() {
           })}
         </View>
 
-        <View style={{ height: Spacing.xxl }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );

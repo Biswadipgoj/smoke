@@ -198,3 +198,54 @@ export const Duration = {
   slow: 500,
   breath: 4000,
 };
+
+// ── Signature multi-stop gradients (rendered via SVG, no native dep) ─────────
+export const Gradients = {
+  cta: ['#5EEAD4', '#2DD4BF', '#12B5B0'] as const,       // primary action
+  aura: ['#7C6BFF', '#2DD4BF', '#38BDF8'] as const,      // hero ring / brand
+  teal: ['#2DD4BF', '#0EA5A5'] as const,
+  violet: ['#8B7BFF', '#6D5AE6'] as const,
+  gold: ['#FCD34D', '#F59E0B'] as const,
+  rose: ['#FDA4C0', '#FB6FA0'] as const,
+  sky: ['#7DD3FC', '#38BDF8'] as const,
+  surface: ['#16283A', '#0E1B28'] as const,              // card sheen
+  ember: ['#FBBF24', '#F97316'] as const,
+};
+
+export type GradientName = keyof typeof Gradients;
+
+// ── Elevation: layered, mostly-colorless depth for a premium feel ───────────
+export const Elevation = {
+  card: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  float: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.34,
+    shadowRadius: 28,
+    elevation: 16,
+  },
+  glow: (color: string) => ({
+    shadowColor: color,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.55,
+    shadowRadius: 22,
+    elevation: 12,
+  }),
+};
+
+// Refined surface + hairline tokens layered over the living background.
+export const Surfaces = {
+  card: 'rgba(20, 34, 50, 0.72)',
+  cardSolid: '#14222F',
+  raised: 'rgba(28, 44, 62, 0.82)',
+  hairline: 'rgba(148, 169, 184, 0.14)',
+  hairlineStrong: 'rgba(148, 169, 184, 0.22)',
+  cardLight: 'rgba(255, 255, 255, 0.9)',
+  hairlineLight: 'rgba(13, 33, 55, 0.08)',
+};

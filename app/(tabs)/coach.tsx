@@ -15,9 +15,11 @@ import Animated, { FadeIn, SlideInDown, SlideInRight, SlideInLeft, FadeInDown, L
 import { useAppStore, ChatMessage, computeCurrentStreak, computeMoneySaved } from '../../src/store/useAppStore';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useTheme } from '../../src/hooks/useTheme';
-import { Colors, FontFamily, FontSize, Spacing, Radius } from '../../src/constants/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Colors, FontFamily, FontSize, Spacing, Radius, Gradients } from '../../src/constants/theme';
 import { getPersona, Persona } from '../../src/constants/personas';
 import { LivingBackground } from '../../src/components/ui/LivingBackground';
+import { GradientView } from '../../src/components/ui/GradientView';
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
@@ -257,7 +259,7 @@ export default function CoachScreen() {
         </View>
 
         <KeyboardAvoidingView
-          style={{ flex: 1 }}
+          style={{ flex: 1, paddingBottom: 88 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={90}
         >
@@ -345,11 +347,14 @@ export default function CoachScreen() {
               onSubmitEditing={() => sendMessage(input)}
             />
             <TouchableOpacity
-              style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]}
+              style={(!input.trim() || isTyping) && styles.sendBtnDisabled}
               onPress={() => sendMessage(input)}
               disabled={!input.trim() || isTyping}
+              activeOpacity={0.85}
             >
-              <Text style={styles.sendBtnText}>↑</Text>
+              <GradientView colors={Gradients.cta} radius={20} style={styles.sendBtn}>
+                <Ionicons name="arrow-up" size={20} color={Colors.bgDark} />
+              </GradientView>
             </TouchableOpacity>
           </Animated.View>
         </KeyboardAvoidingView>
@@ -390,7 +395,6 @@ const styles = StyleSheet.create({
 
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderTopWidth: 1, gap: Spacing.sm },
   input: { flex: 1, fontFamily: FontFamily.regular, fontSize: FontSize.base, maxHeight: 100, paddingVertical: Spacing.sm },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { color: Colors.bgDark, fontFamily: FontFamily.bold, fontSize: FontSize.md },
 });
