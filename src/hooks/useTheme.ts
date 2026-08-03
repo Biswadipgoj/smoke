@@ -1,40 +1,43 @@
 // src/hooks/useTheme.ts
 import { useColorScheme } from 'react-native';
-import { useAppStore } from '../store/useAppStore';
+import { useDhruvStore } from '../store/useDhruvStore';
 import { Colors } from '../constants/theme';
 
 export function useTheme() {
-  const profile = useAppStore((s) => s.profile);
+  const profile = useDhruvStore((s) => s.profile);
   const systemScheme = useColorScheme();
-  const mode = profile?.themeMode ?? 'dark';
+  const mode = profile?.settings.themeMode ?? 'dark';
 
-  const isDark =
-    mode === 'dark' ? true : mode === 'light' ? false : systemScheme === 'dark';
+  const isDark = mode === 'light' ? false : mode === 'system' ? systemScheme === 'dark' : true;
+  const isOled = mode === 'oled';
 
   return {
     isDark,
+    isOled,
     colors: isDark
       ? {
-          bg: Colors.bgDark,
-          bgCard: Colors.bgDarkCard,
-          bgElevated: Colors.bgDarkElevated,
-          text: Colors.textDark,
-          textSecondary: Colors.textDarkSecondary,
-          textMuted: Colors.textDarkMuted,
-          glass: Colors.glassBg,
-          glassBorder: Colors.glassBorder,
-          tabBg: Colors.tabBarBgDark,
+          bg: isOled ? Colors.trueBlack : Colors.nishith,
+          bgCard: Colors.nil,
+          bgElevated: Colors.nilElevated,
+          text: Colors.bone,
+          textSecondary: Colors.boneSecondary,
+          textMuted: Colors.boneMuted,
+          hairline: Colors.hairline,
+          accent: Colors.bhor,
+          jal: Colors.jal,
+          chhai: Colors.chhai,
         }
       : {
-          bg: Colors.bgLight,
-          bgCard: Colors.bgLightCard,
-          bgElevated: Colors.bgLightElevated,
-          text: Colors.textLight,
-          textSecondary: Colors.textLightSecondary,
-          textMuted: Colors.textLightMuted,
-          glass: Colors.glassBgLight,
-          glassBorder: Colors.glassBorderLight,
-          tabBg: Colors.tabBarBgLight,
+          bg: Colors.lightBg,
+          bgCard: Colors.lightCard,
+          bgElevated: Colors.lightElevated,
+          text: Colors.lightText,
+          textSecondary: Colors.lightTextSecondary,
+          textMuted: Colors.lightTextMuted,
+          hairline: Colors.hairlineLight,
+          accent: Colors.bhor,
+          jal: Colors.jal,
+          chhai: Colors.chhai,
         },
   };
 }

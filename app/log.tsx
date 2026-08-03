@@ -1,230 +1,158 @@
-// app/log.tsx — Log a cigarette (v3: Robust Reanimated)
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, SlideInDown, ZoomIn, FadeOut } from 'react-native-reanimated';
-import { useAppStore, ContextTag, SmokingLog } from '../src/store/useAppStore';
+// app/log.tsx — quick +1 logging (tracking doc §7, the 3-second rule).
+// Retrospective-first: never prompt during consumption, this is for logging
+// after the fact. Confirmation is a haptic tick and nothing else — no
+// lecture, no warning, no sad animation (doc 03 §7 rules).
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDhruvStore } from '../src/store/useDhruvStore';
 import { useTranslation } from '../src/hooks/useTranslation';
-import { useTheme } from '../src/hooks/useTheme';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
-import { PrimaryButton } from '../src/components/ui/PrimaryButton';
-
-function formatInterval(min: number): string {
-  if (min < 60) return `${Math.round(min)} minutes`;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
-  return m > 0 ? `${h}h ${m}m` : `${h} hours`;
-}
+import { TrackType, TRIGGER_CHIPS, TobaccoBaseline, AlcoholBaseline, PornBaseline, TobaccoEvent, AlcoholEvent, PornEvent } from '../src/domain/types';
+import { haptic } from '../src/lib/haptics';
 
 export default function LogScreen() {
+  const params = useLocalSearchParams<{ track?: string }>();
   const { t } = useTranslation();
-  const { isDark, colors } = useTheme();
-  const { addLog, logs } = useAppStore();
+  const tracks = useDhruvStore((s) => s.tracks);
+  const logEvent = useDhruvStore((s) => s.logEvent);
+  const activeTracks = tracks.filter((tr) => tr.active);
 
-  const [selectedTag, setSelectedTag] = useState<ContextTag | undefined>();
-  const [note, setNote] = useState('');
+  const [track, setTrack] = useState<TrackType | null>((params.track as TrackType) ?? (activeTracks.length === 1 ? activeTracks[0].type : null));
+  const [quantity, setQuantity] = useState(1);
+  const [trigger, setTrigger] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
-  // Time since last cigarette
-  const lastCigInfo = useMemo(() => {
-    const cigs = logs.filter(l => l.type === 'cigarette')
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    if (cigs.length === 0) return null;
-    const diff = (Date.now() - new Date(cigs[0].timestamp).getTime()) / 60000;
-    return { minutes: diff };
-  }, [logs]);
+  const selectedTrack = tracks.find((tr) => tr.type === track);
 
-  const contextTags: ContextTag[] = ['stress', 'social', 'habit', 'boredom', 'alcohol', 'other'];
-  const contextEmojis: Record<ContextTag, string> = {
-    stress: '😰', social: '👥', habit: '🔄', boredom: '😐', alcohol: '🍺', other: '❓',
-  };
-  const contextLabels: Record<ContextTag, string> = {
-    stress: t.logContextStress,
-    social: t.logContextSocial,
-    habit: t.logContextHabit,
-    boredom: t.logContextBoredom,
-    alcohol: t.logContextAlcohol,
-    other: t.logContextOther,
+  const chips = track ? TRIGGER_CHIPS[track] : [];
+
+  const submit = () => {
+    if (!selectedTrack || !track) return;
+    const now = new Date().toISOString();
+    const base = { id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, timestamp: now, loggedAt: now, trigger, track };
+
+    if (track === 'tobacco') {
+      const baseline = selectedTrack.baseline as TobaccoBaseline;
+      const event: TobaccoEvent = { ...base, track: 'tobacco', quantity, unitCost: baseline.unitCost };
+      logEvent(event);
+    } else if (track === 'alcohol') {
+      const baseline = selectedTrack.baseline as AlcoholBaseline;
+      const perDrink = baseline.typicalDrinksPerOccasion > 0 ? baseline.typicalSpendPerOccasion / baseline.typicalDrinksPerOccasion : baseline.typicalSpendPerOccasion;
+      const event: AlcoholEvent = { ...base, track: 'alcohol', spend: perDrink * quantity };
+      logEvent(event);
+    } else {
+      const baseline = selectedTrack.baseline as PornBaseline;
+      const event: PornEvent = { ...base, track: 'porn' };
+      logEvent(event);
+    }
+
+    haptic('tap');
+    setSubmitted(true);
+    setTimeout(() => router.back(), 900);
   };
 
-  function getLogEncouragement(tag?: ContextTag): string {
-    if (!tag) return "Logging helps you understand your patterns. No judgment here 💙";
-    const msgs: Record<ContextTag, string> = {
-      stress: "Stress is the #1 trigger. Next time, try 3 deep breaths before reaching for one.",
-      social: "Social pressure is tough. One trick: hold a drink in your smoking hand.",
-      habit: "Habit smoking is often unconscious. Noticing it is the first step to changing it.",
-      boredom: "Boredom smoking? Try keeping your hands busy — a stress ball or doodling works.",
-      alcohol: "Alcohol lowers willpower. Try setting a drink limit before you go out next time.",
-      other: "Understanding your triggers takes time. Keep logging — the patterns will emerge.",
-    };
-    return msgs[tag];
+  if (submitted) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <Text style={styles.successText}>✓</Text>
+      </View>
+    );
   }
 
-  const handleLog = () => {
-    const log: SmokingLog = {
-      id: `cig_${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      type: 'cigarette',
-      contextTag: selectedTag,
-      note: note.trim().slice(0, 200) || undefined,
-    };
-    addLog(log);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSubmitted(true);
-    setTimeout(() => router.back(), 2500);
-  };
-
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: isDark ? Colors.bgDark : Colors.bgLight }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={styles.handle} />
+    <SafeAreaView style={styles.root}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>{t.logTitle}</Text>
 
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>{t.logTitle}</Text>
-          <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
-            <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
-          </TouchableOpacity>
-        </View>
+        {!track && (
+          <View style={styles.chipColumn}>
+            {activeTracks.map((tr) => (
+              <TouchableOpacity key={tr.id} style={styles.trackOption} onPress={() => setTrack(tr.type)}>
+                <Text style={styles.trackOptionText}>{trackLabel(t, tr.type)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
-        {submitted ? (
-          <Animated.View 
-            entering={ZoomIn.springify().damping(12)} 
-            exiting={FadeOut}
-            style={styles.successContainer}
-          >
-            <Text style={styles.successEmoji}>✓</Text>
-            <Text style={[styles.successTitle, { color: colors.text }]}>{t.loggedSuccess}</Text>
-            <Text style={[styles.successMsg, { color: colors.textSecondary }]}>
-              {getLogEncouragement(selectedTag)}
-            </Text>
-            {lastCigInfo && lastCigInfo.minutes < 30 && (
-              <Animated.View entering={SlideInDown.delay(300)} style={styles.intervalHint}>
-                <Text style={styles.intervalHintText}>
-                  💡 Only {Math.round(lastCigInfo.minutes)} min since your last — try to stretch the gap next time
-                </Text>
-              </Animated.View>
-            )}
-          </Animated.View>
-        ) : (
-          <Animated.View 
-            entering={SlideInDown.springify().damping(15)} 
-            exiting={FadeOut.duration(200)}
-            style={styles.form}
-          >
-            {lastCigInfo && (
-              <Animated.View entering={FadeInDown.delay(100)} style={[styles.intervalCard, { backgroundColor: `${Colors.primary}15` }]}>
-                <Text style={styles.intervalEmoji}>⏱️</Text>
-                <Text style={[styles.intervalText, { color: Colors.primary }]}>
-                  {formatInterval(lastCigInfo.minutes)} since last cigarette
-                </Text>
-              </Animated.View>
-            )}
+        {track && (
+          <>
+            <Text style={styles.fieldLabel}>{t.logQuantity}</Text>
+            <View style={styles.stepperRow}>
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => setQuantity((q) => Math.max(1, q - 1))}>
+                <Text style={styles.stepperBtnText}>−</Text>
+              </TouchableOpacity>
+              <Text style={styles.stepperValue}>{quantity}</Text>
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => setQuantity((q) => q + 1)}>
+                <Text style={styles.stepperBtnText}>+</Text>
+              </TouchableOpacity>
+            </View>
 
-            <Animated.Text entering={FadeInDown.delay(150)} style={[styles.sectionLabel, { color: colors.text }]}>
-              {t.logContextQuestion}
-            </Animated.Text>
-            <Animated.View entering={FadeInDown.delay(200)} style={styles.tagRow}>
-              {contextTags.map((tag) => (
+            <Text style={styles.fieldLabel}>{t.logWhatTriggered}</Text>
+            <View style={styles.chipWrap}>
+              {chips.map((chip) => (
                 <TouchableOpacity
-                  key={tag}
-                  style={[
-                    styles.tag,
-                    { borderColor: isDark ? Colors.bgDarkElevated : '#E5E7EB' },
-                    selectedTag === tag && styles.tagActive,
-                  ]}
+                  key={chip}
                   onPress={() => {
-                    setSelectedTag(selectedTag === tag ? undefined : tag);
-                    Haptics.selectionAsync();
+                    haptic('select');
+                    setTrigger((prev) => (prev.includes(chip) ? prev.filter((c) => c !== chip) : [...prev, chip]));
                   }}
-                  activeOpacity={0.7}
+                  style={[styles.smallChip, trigger.includes(chip) && styles.smallChipActive]}
                 >
-                  <Text style={styles.tagEmoji}>{contextEmojis[tag]}</Text>
-                  <Text style={[styles.tagText, { color: colors.textSecondary }, selectedTag === tag && styles.tagTextActive]}>
-                    {contextLabels[tag]}
-                  </Text>
+                  <Text style={[styles.smallChipText, trigger.includes(chip) && styles.smallChipTextActive]}>{chipLabel(t, chip)}</Text>
                 </TouchableOpacity>
               ))}
-            </Animated.View>
+            </View>
 
-            {selectedTag && (
-              <Animated.View entering={ZoomIn.duration(200)} exiting={FadeOut.duration(200)} style={[styles.tipCard, { backgroundColor: `${Colors.primary}10` }]}>
-                <Text style={[styles.tipText, { color: Colors.primary }]}>
-                  💡 {getLogEncouragement(selectedTag)}
-                </Text>
-              </Animated.View>
-            )}
-
-            <Animated.Text entering={FadeInDown.delay(250)} style={[styles.sectionLabel, { color: colors.text }]}>
-              {t.logNote}
-            </Animated.Text>
-            <Animated.View entering={FadeInDown.delay(300)}>
-              <TextInput
-                style={[styles.noteInput, { color: colors.text, borderColor: isDark ? Colors.bgDarkElevated : '#E5E7EB', backgroundColor: colors.bgCard }]}
-                value={note}
-                onChangeText={setNote}
-                placeholder={t.logNotePlaceholder}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                maxLength={200}
-              />
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(350)}>
-              <PrimaryButton label={t.logSubmit} onPress={handleLog} style={styles.submitBtn} size="lg" />
-            </Animated.View>
-
-            <Animated.Text entering={FadeIn.delay(500)} style={[styles.noJudgment, { color: colors.textMuted }]}>
-              Logging is learning, not failing 💙
-            </Animated.Text>
-          </Animated.View>
+            <TouchableOpacity style={styles.submitBtn} onPress={submit}>
+              <Text style={styles.submitBtnText}>{t.logSubmit}</Text>
+            </TouchableOpacity>
+          </>
         )}
-      </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+function trackLabel(t: any, track: TrackType): string {
+  return track === 'tobacco' ? t.trackTobacco : track === 'alcohol' ? t.trackAlcohol : t.trackPorn;
+}
+
+const CHIP_KEY_MAP: Record<string, string> = {
+  after_meal: 'triggerAfterMeal', first_of_day: 'triggerFirstOfDay', toilet: 'triggerToilet', with_chai_coffee: 'triggerWithChaiCoffee',
+  with_alcohol: 'triggerWithAlcohol', work_break: 'triggerWorkBreak', commute: 'triggerCommute', stress: 'triggerStress', boredom: 'triggerBoredom',
+  on_phone: 'triggerOnPhone', offered: 'triggerOffered', after_argument: 'triggerAfterArgument', before_bed: 'triggerBeforeBed', after_sex: 'triggerAfterSex',
+  social_pressure: 'triggerSocialPressure', celebration: 'triggerCelebration', loneliness: 'triggerLoneliness', with_food: 'triggerWithFood',
+  habit_time: 'triggerHabitTime', to_sleep: 'triggerToSleep', anger: 'triggerAnger', work_event: 'triggerWorkEvent', others_drinking: 'triggerOthersDrinking',
+  bed_at_night: 'triggerBedAtNight', alone_at_home: 'triggerAloneAtHome', phone_scrolling: 'triggerPhoneScrolling', cant_sleep: 'triggerCantSleep',
+  woke_early: 'triggerWokeEarly', procrastinating: 'triggerProcrastinating', after_drinking: 'triggerAfterDrinking',
+};
+
+function chipLabel(t: any, chip: string): string {
+  const key = CHIP_KEY_MAP[chip];
+  return key ? t[key] : chip;
+}
+
 const styles = StyleSheet.create({
-  root: { flex: 1, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.bgDarkElevated, alignSelf: 'center', marginTop: Spacing.sm, marginBottom: Spacing.md },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
-  title: { fontFamily: FontFamily.bold, fontSize: FontSize.xl },
-  closeBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: FontSize.md },
-  form: { paddingHorizontal: Spacing.lg, gap: Spacing.sm },
-
-  intervalCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.xs },
-  intervalEmoji: { fontSize: 18 },
-  intervalText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
-
-  sectionLabel: { fontFamily: FontFamily.semiBold, fontSize: FontSize.base, marginTop: Spacing.xs },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.xs },
-  tag: { borderWidth: 1.5, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs + 2, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tagActive: { borderColor: Colors.amber, backgroundColor: `${Colors.amber}22` },
-  tagEmoji: { fontSize: 14 },
-  tagText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm },
-  tagTextActive: { color: Colors.amber },
-
-  tipCard: { borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.xs },
-  tipText: { fontFamily: FontFamily.regular, fontSize: FontSize.sm, lineHeight: FontSize.sm * 1.5 },
-
-  noteInput: { borderWidth: 1.5, borderRadius: Radius.md, padding: Spacing.md, fontFamily: FontFamily.regular, fontSize: FontSize.base, minHeight: 70, textAlignVertical: 'top', marginBottom: Spacing.md },
-  submitBtn: { width: '100%' },
-  noJudgment: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, textAlign: 'center', marginTop: Spacing.sm },
-
-  successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
-  successEmoji: { fontSize: 56, color: Colors.success, marginBottom: Spacing.md },
-  successTitle: { fontFamily: FontFamily.bold, fontSize: FontSize.xl, marginBottom: Spacing.sm },
-  successMsg: { fontFamily: FontFamily.regular, fontSize: FontSize.base, textAlign: 'center', lineHeight: FontSize.base * 1.6, marginBottom: Spacing.lg },
-  intervalHint: { backgroundColor: `${Colors.amber}15`, borderRadius: Radius.md, padding: Spacing.md },
-  intervalHintText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.amber, textAlign: 'center' },
+  root: { flex: 1, backgroundColor: Colors.nishith },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  successText: { fontSize: 56, color: Colors.jal },
+  content: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+  title: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xl, color: Colors.bone, marginBottom: Spacing.lg, textAlign: 'center' },
+  chipColumn: { gap: Spacing.sm },
+  trackOption: { backgroundColor: Colors.nil, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
+  trackOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, color: Colors.bone },
+  fieldLabel: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.boneSecondary, marginTop: Spacing.md, marginBottom: Spacing.sm },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.lg },
+  stepperBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.nil, alignItems: 'center', justifyContent: 'center' },
+  stepperBtnText: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xl, color: Colors.bone },
+  stepperValue: { fontFamily: FontFamily.mono, fontSize: FontSize.xxl, color: Colors.bone, minWidth: 40, textAlign: 'center' },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  smallChip: { borderWidth: 1, borderColor: Colors.nilElevated, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
+  smallChipActive: { borderColor: Colors.jal, backgroundColor: Colors.jalSoft },
+  smallChipText: { fontFamily: FontFamily.regular, fontSize: FontSize.sm, color: Colors.boneSecondary },
+  smallChipTextActive: { color: Colors.jal },
+  submitBtn: { backgroundColor: Colors.bhor, borderRadius: Radius.full, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.xl },
+  submitBtnText: { fontFamily: FontFamily.semiBold, fontSize: FontSize.base, color: Colors.nishith },
 });
