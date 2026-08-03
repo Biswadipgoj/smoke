@@ -8,6 +8,7 @@ import { useTranslation } from '../src/hooks/useTranslation';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
 import { localeLabels, Locale } from '../src/constants/translations';
 import { ThemeMode, Settings } from '../src/domain/types';
+import { signOut, clearLocalState } from '../src/lib/auth';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -16,6 +17,19 @@ export default function SettingsScreen() {
   const deleteEverything = useDhruvStore((s) => s.deleteEverything);
   const settings = profile?.settings;
   if (!settings) return null;
+
+  const confirmSignOut = () => {
+    Alert.alert('Sign out', 'You can sign back in any time — your data stays on the server.', [
+      { text: t.cancel, style: 'cancel' },
+      {
+        text: 'Sign out', onPress: async () => {
+          await signOut();
+          clearLocalState();
+          router.replace('/auth');
+        },
+      },
+    ]);
+  };
 
   const confirmDelete = () => {
     Alert.alert(t.settingsDeleteAll, t.settingsDeleteConfirm, [
@@ -76,13 +90,24 @@ export default function SettingsScreen() {
           <Text style={styles.linkText}>{t.settingsCrisisResources}</Text>
         </TouchableOpacity>
 
+        <Text style={[styles.sectionLabel, { marginTop: Spacing.xl }]}>Account</Text>
+        <TouchableOpacity style={styles.linkRow} onPress={confirmSignOut}>
+          <Text style={styles.linkText}>Sign out</Text>
+        </TouchableOpacity>
+
         <Text style={[styles.sectionLabel, { marginTop: Spacing.xl }]}>{t.settingsData}</Text>
         <TouchableOpacity style={styles.destructiveRow} onPress={confirmDelete}>
           <Text style={styles.destructiveText}>{t.settingsDeleteAll}</Text>
         </TouchableOpacity>
+        <Text style={styles.aboutText}>
+          This clears your tracks, events, and history on the server and this device but keeps your
+          account signed in. To delete the account itself, contact support — client apps can't remove
+          an auth account directly (see SETUP.md).
+        </Text>
 
         <Text style={styles.aboutText}>
-          {t.settingsAbout} — Dhruv was created by Biswodip Goj. Everything in this app works fully offline; an AI companion is planned for a later phase.
+          {t.settingsAbout} — Dhruv was created by Biswodip Goj. The urge and lapse flows work fully
+          offline and sync when you're back online; an AI companion is planned for a later phase.
         </Text>
       </ScrollView>
     </SafeAreaView>
