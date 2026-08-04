@@ -9,6 +9,7 @@ import { useTranslation } from '../src/hooks/useTranslation';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
 import { CheckIn } from '../src/domain/types';
 import { haptic } from '../src/lib/haptics';
+import { localDateKey } from '../src/lib/dates';
 
 type Mood = NonNullable<CheckIn['mood']>;
 type Sleep = NonNullable<CheckIn['sleepQuality']>;
@@ -33,7 +34,7 @@ export default function CheckinScreen() {
 
   const submit = () => {
     recordCheckIn({
-      date: new Date().toISOString().slice(0, 10),
+      date: localDateKey(),
       mood: mood ?? undefined,
       sleepQuality: sleep ?? undefined,
       halt,

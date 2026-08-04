@@ -13,13 +13,11 @@ import { TrackType, TRIGGER_CHIPS } from '../src/domain/types';
 import { Tide } from '../src/components/motion/Tide';
 import { Breath } from '../src/components/motion/Breath';
 import { haptic } from '../src/lib/haptics';
-import { averageUrgeDurationSeconds, formatDuration, URGE_DECAY_MIN_EPISODES } from '../src/lib/urgeDecay';
+import { averageUrgeDurationSeconds, formatDuration } from '../src/lib/urgeDecay';
 import { tf } from '../src/constants/translations';
 
 type Step = 'name' | 'rate' | 'ride' | 'close';
 type Outcome = 'surfed' | 'alternative' | 'lapsed';
-
-const TRACK_ORDER: TrackType[] = ['tobacco', 'alcohol', 'porn'];
 
 export default function UrgeScreen() {
   const params = useLocalSearchParams<{ track?: string }>();

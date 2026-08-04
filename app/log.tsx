@@ -2,14 +2,14 @@
 // Retrospective-first: never prompt during consumption, this is for logging
 // after the fact. Confirmation is a haptic tick and nothing else — no
 // lecture, no warning, no sad animation (doc 03 §7 rules).
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDhruvStore } from '../src/store/useDhruvStore';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
-import { TrackType, TRIGGER_CHIPS, TobaccoBaseline, AlcoholBaseline, PornBaseline, TobaccoEvent, AlcoholEvent, PornEvent } from '../src/domain/types';
+import { TrackType, TRIGGER_CHIPS, TobaccoBaseline, AlcoholBaseline, TobaccoEvent, AlcoholEvent, PornEvent } from '../src/domain/types';
 import { haptic } from '../src/lib/haptics';
 
 export default function LogScreen() {
@@ -43,7 +43,6 @@ export default function LogScreen() {
       const event: AlcoholEvent = { ...base, track: 'alcohol', spend: perDrink * quantity };
       logEvent(event);
     } else {
-      const baseline = selectedTrack.baseline as PornBaseline;
       const event: PornEvent = { ...base, track: 'porn' };
       logEvent(event);
     }

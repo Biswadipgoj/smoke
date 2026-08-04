@@ -15,7 +15,6 @@ export default function AddTrackScreen() {
   const { t } = useTranslation();
   const tracks = useDhruvStore((s) => s.tracks);
   const addTrack = useDhruvStore((s) => s.addTrack);
-  const acknowledgeAlcoholGate = useDhruvStore((s) => s.acknowledgeAlcoholGate);
 
   const existingTypes = new Set(tracks.filter((tr) => tr.active).map((tr) => tr.type));
   const available = (['tobacco', 'alcohol', 'porn'] as TrackType[]).filter((tr) => !existingTypes.has(tr));

@@ -15,13 +15,26 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const [locked, setLocked] = useState(enabled);
   const [canUseLock, setCanUseLock] = useState(false);
+  // The hardware/enrolment check is async. Until it resolves we must not
+  // render children: the threat model here is someone holding the unlocked
+  // phone (master doc §15.1), and even a one-frame flash of the Thread or a
+  // lapse entry defeats the lock entirely.
+  const [capabilityChecked, setCapabilityChecked] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const enrolled = await LocalAuthentication.isEnrolledAsync();
-      if (mounted) setCanUseLock(hasHardware && enrolled);
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        if (mounted) setCanUseLock(hasHardware && enrolled);
+      } catch {
+        // Treat an unavailable module as "cannot lock" — never trap the user
+        // out of a crisis-adjacent app because of a hardware quirk.
+        if (mounted) setCanUseLock(false);
+      } finally {
+        if (mounted) setCapabilityChecked(true);
+      }
     })();
     return () => {
       mounted = false;
@@ -29,8 +42,9 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!capabilityChecked) return;
     setLocked(enabled && canUseLock);
-  }, [enabled, canUseLock]);
+  }, [enabled, canUseLock, capabilityChecked]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
@@ -48,6 +62,8 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Blank (not children) while we don't yet know whether to lock.
+  if (enabled && !capabilityChecked) return <View style={styles.root} />;
   if (!locked) return <>{children}</>;
 
   return (

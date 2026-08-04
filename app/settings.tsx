@@ -1,6 +1,6 @@
 // app/settings.tsx
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDhruvStore } from '../src/store/useDhruvStore';
@@ -106,8 +106,13 @@ export default function SettingsScreen() {
         </Text>
 
         <Text style={styles.aboutText}>
-          {t.settingsAbout} — Dhruv was created by Biswodip Goj. The urge and lapse flows work fully
-          offline and sync when you're back online; an AI companion is planned for a later phase.
+          {t.settingsAbout} — Dhruv was created by{' '}
+          <Text style={styles.aboutLink} onPress={() => Linking.openURL('https://biswadip.in')}>
+            Biswodip Goj (biswadip.in)
+          </Text>
+          . The urge and lapse flows work fully offline and sync when you're back online; the
+          companion's open conversation uses a language model from Google when you're online, with
+          a fully offline guided fallback.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -167,4 +172,5 @@ const styles = StyleSheet.create({
   destructiveRow: { backgroundColor: Colors.chhaiSoft, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.sm },
   destructiveText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, color: Colors.bone },
   aboutText: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, color: Colors.boneMuted, marginTop: Spacing.xxl, lineHeight: FontSize.xs * 1.6 },
+  aboutLink: { color: Colors.bhor, textDecorationLine: 'underline' },
 });

@@ -5,8 +5,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
 import { useDhruvStore } from '../src/store/useDhruvStore';
+import { scheduleLapseFollowUp } from '../src/lib/notifications';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
 import { TrackType, TRIGGER_CHIPS } from '../src/domain/types';
@@ -37,23 +37,10 @@ export default function LapseScreen() {
     setPhase('reframe');
   };
 
-  const scheduleFollowUp = async () => {
-    // A single warm message in 24h — not a check-in demand (master doc §7.6.5).
-    try {
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') return;
-      await Notifications.scheduleNotificationAsync({
-        content: { title: undefined, body: t.lapseFollowUp24h, sound: false },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: 24 * 60 * 60,
-          repeats: false,
-        },
-      });
-    } catch {
-      // Silent — the in-app experience doesn't depend on this notification firing.
-    }
-  };
+  // A single warm message in 24h — not a check-in demand (master doc §7.6.5).
+  // Permission is requested here, at the one moment the app has something
+  // worth sending, rather than upfront at onboarding.
+  const scheduleFollowUp = () => scheduleLapseFollowUp(t.lapseFollowUp24h);
 
   const done = () => router.replace('/(tabs)');
 

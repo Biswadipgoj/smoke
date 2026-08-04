@@ -5,8 +5,21 @@
 // decreases. Nothing earned is ever removed (same principle as the Thread).
 import { Track, ConsumptionEvent, TobaccoEvent, AlcoholEvent, PornEvent } from '../domain/types';
 
+/**
+ * Fractional days elapsed. Deliberately NOT rounded up to a whole day: the
+ * previous `Math.max(1, ...)` credited a full day of baseline savings the
+ * instant a track was created, so a brand-new user saw money they hadn't
+ * actually saved yet. Every figure this app shows has to be one the user
+ * could verify themselves.
+ */
 function daysSince(iso: string): number {
-  return Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+  const elapsed = (Date.now() - new Date(iso).getTime()) / 86400000;
+  return Math.max(0, elapsed);
+}
+
+/** Guards the per-day rate used for projections against divide-by-zero on day one. */
+function ratePeriodDays(iso: string): number {
+  return Math.max(1, daysSince(iso));
 }
 
 function isSameDay(iso: string, day: Date): boolean {
@@ -26,6 +39,7 @@ export interface ReclaimResult {
 export function computeReclaim(track: Track, events: ConsumptionEvent[]): ReclaimResult {
   const trackEvents = events.filter((e) => e.track === track.type);
   const daysActive = daysSince(track.startedAt);
+  const rateDays = ratePeriodDays(track.startedAt);
   const today = new Date();
 
   if (track.baseline.track === 'tobacco') {
@@ -37,7 +51,7 @@ export function computeReclaim(track: Track, events: ConsumptionEvent[]): Reclai
     const moneyToday = Math.max(0, baselineDailyCost - actualToday);
     const baselineTotalCost = baselineDailyCost * daysActive;
     const moneyTotal = Math.max(0, baselineTotalCost - actualTotal);
-    const dailyRate = moneyTotal / daysActive;
+    const dailyRate = moneyTotal / rateDays;
     return { moneyToday, moneyTotal, hoursToday: 0, hoursTotal: 0, yearProjection: dailyRate * 365, primaryCurrency: 'money' };
   }
 
@@ -50,7 +64,7 @@ export function computeReclaim(track: Track, events: ConsumptionEvent[]): Reclai
     const moneyToday = Math.max(0, baselineDailyCost - actualToday);
     const baselineTotalCost = baselineDailyCost * daysActive;
     const moneyTotal = Math.max(0, baselineTotalCost - actualTotal);
-    const dailyRate = moneyTotal / daysActive;
+    const dailyRate = moneyTotal / rateDays;
     return { moneyToday, moneyTotal, hoursToday: 0, hoursTotal: 0, yearProjection: dailyRate * 365, primaryCurrency: 'money' };
   }
 
@@ -67,7 +81,7 @@ export function computeReclaim(track: Track, events: ConsumptionEvent[]): Reclai
   const hoursToday = Math.max(0, (baselineDailyMinutes - actualTodayMinutes) / 60);
   const baselineTotalMinutes = baselineDailyMinutes * daysActive;
   const hoursTotal = Math.max(0, (baselineTotalMinutes - actualTotalMinutes) / 60);
-  const dailyRateHours = hoursTotal / daysActive;
+  const dailyRateHours = hoursTotal / rateDays;
   return { moneyToday: 0, moneyTotal: 0, hoursToday, hoursTotal, yearProjection: dailyRateHours * 365, primaryCurrency: 'time' };
 }
 

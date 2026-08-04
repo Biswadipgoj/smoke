@@ -87,7 +87,16 @@ Create `.env` in the project root (never commit this file):
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+EXPO_PUBLIC_GEMINI_API_KEY=your-gemini-api-key-here
 ```
+
+`EXPO_PUBLIC_GEMINI_API_KEY` is optional — get one free at
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey). Without
+it, the Companion tab still works: the guided offline paths are always
+there, and free-text chat shows the "can't reach the network" fallback
+instead of a live reply. See the "AI companion key exposure" note under
+**Known gaps** below before shipping this publicly — it's a real tradeoff,
+not an oversight.
 
 ```bash
 npm install
@@ -107,31 +116,109 @@ npx expo run:android
 ## 5. EAS environment variables (required for builds/updates)
 
 A local `.env` only affects `expo start`. EAS builds and OTA updates need
-the same two variables stored on EAS so they're inlined into the bundle —
-do this once per environment:
+the same variables stored on EAS so they're inlined into the bundle — do
+this once per environment (`development`, `preview`, `production`):
 
 ```bash
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project-id.supabase.co" \
-  --visibility plaintext --environment development
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project-id.supabase.co" \
-  --visibility plaintext --environment preview
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project-id.supabase.co" \
-  --visibility plaintext --environment production
-
-eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-anon-key-here" \
-  --visibility plaintext --environment development
-eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-anon-key-here" \
-  --visibility plaintext --environment preview
-eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-anon-key-here" \
-  --visibility plaintext --environment production
+for env in development preview production; do
+  eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project-id.supabase.co" \
+    --visibility plaintext --environment $env
+  eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-anon-key-here" \
+    --visibility plaintext --environment $env
+  eas env:create --name EXPO_PUBLIC_GEMINI_API_KEY --value "your-gemini-api-key-here" \
+    --visibility sensitive --environment $env
+done
 ```
 
-The anon key is meant to be public (it has no privileges beyond what RLS
-grants), so `plaintext` is fine — it is **not** a secret in the way a
-service-role key would be. Never put a Supabase **service role** key in
+The Supabase anon key is meant to be public (it has no privileges beyond
+what RLS grants), so `plaintext` is fine — it is **not** a secret in the way
+a service-role key would be. Never put a Supabase **service role** key in
 `EXPO_PUBLIC_*` or anywhere in the client app; it bypasses RLS entirely.
 
-## 6. Build
+The Gemini key is a different story: `EXPO_PUBLIC_*` vars are inlined into
+the client bundle, so this key **is extractable from the APK**. `sensitive`
+visibility only hides it from the EAS dashboard/logs, not from the shipped
+app. Restrict it in [Google AI Studio](https://aistudio.google.com/apikey)
+(set a daily quota, and an app/package restriction if offered) and treat a
+leak as a "rotate it" event, not a "we got breached" event. See **Known
+gaps** at the bottom of this file for the proper long-term fix (a proxy).
+
+## 6. Google service account key — fixes the non-interactive build failure
+
+If a CI/`--non-interactive` build dies with:
+
+```
+Looking up credentials configuration for com.smokeless.ai...
+Google Service Account Keys cannot be set up in --non-interactive mode.
+Error: build:internal command failed.
+```
+
+…it means EAS wants a Google **service account key** that hasn't been stored
+on your EAS project yet, and `--non-interactive` forbids it from prompting
+you to create one mid-build. **The one-time setup below is the fix, and only
+the account owner can do it** — it needs your Firebase/Play Console access,
+so it can't be done from a PR.
+
+There are two *different* Google service account keys in an Android Expo
+project, and it's worth knowing which one you're being asked for:
+
+| Key | Needed for | Set up under |
+|---|---|---|
+| **FCM V1** | Android notifications via `expo-notifications` | Firebase project → service account |
+| **Play submissions** | `eas submit` uploading to the Play Store | Play Console → API access |
+
+**The likely culprit here is the FCM V1 key**, because this project depends
+on `expo-notifications` and EAS resolves Android push credentials during the
+build's credential step — which is exactly where the log above stops, right
+after the keystore was resolved successfully. Worth knowing: Dhruv only ever
+sends **local** notifications (the single 24h post-lapse follow-up), so it
+does not functionally need push — but EAS's credential check keys off the
+package being present, not off how you use it.
+
+Rather than guess, confirm which one is missing in one command:
+
+```bash
+eas credentials
+# → Android → production → inspect "Push Notifications (FCM V1)"
+#   and "Google Service Account" entries
+```
+
+### Setting up the FCM V1 key (Android notifications)
+
+1. Create/open a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+   and add an Android app with package name `com.smokeless.ai`.
+2. Firebase **Project settings → Service accounts → Generate new private
+   key** → downloads a `.json`. **Never commit it.**
+3. `eas credentials` → **Android** → **production** → **Push Notifications
+   (FCM V1)** → **Set up a Google Service Account Key** → point it at that
+   file. It's then stored on EAS and every future non-interactive build
+   resolves it automatically.
+
+### Setting up the Play submissions key (only needed for `eas submit`)
+
+1. **Play Console → Setup → API access → Choose a project to link** (or
+   create one), linking a Google Cloud project to your Play Console account.
+2. In that Google Cloud project: **IAM & Admin → Service Accounts → Create
+   service account** (e.g. `eas-release`).
+3. Back in Play Console **API access**, find it under **Service accounts** →
+   **Grant access** → at least **Release manager**.
+4. Google Cloud → the service account → **Keys → Add key → Create new key →
+   JSON**. **Never commit it.**
+5. Upload it to EAS as a file-type env var — this is what `eas.json`'s
+   `submit.production.android.serviceAccountKeyPath: "$GOOGLE_SERVICE_ACCOUNT_KEY"`
+   resolves:
+
+   ```bash
+   eas env:create --name GOOGLE_SERVICE_ACCOUNT_KEY --type file \
+     --value ./path/to/play-service-account.json \
+     --visibility secret --environment production
+   ```
+
+> If you don't intend to use `eas submit` at all (uploading the AAB through
+> the Play Console UI by hand instead), you can delete the `submit` block
+> from `eas.json` entirely and skip this second key.
+
+## 7. Build
 
 `eas.json` has four profiles. The two `production*` profiles share the same
 channel and version (`production-apk` `extends` `production`), so a release
@@ -178,7 +265,7 @@ same command instead of letting EAS generate a new one — **the signing key
 must never change for an app already on the Play Store**, or updates will
 be rejected.
 
-## 7. Play Console setup
+## 8. Play Console setup
 
 1. [play.google.com/console](https://play.google.com/console) → **Create app**.
    Use the package name already set in `app.json` (`com.smokeless.ai`) —
@@ -215,7 +302,7 @@ permissions, download its key). Store its path in `eas.json` under
 `submit.production.android.serviceAccountKeyPath`, or pass it interactively
 each time — don't commit the key file to the repo.
 
-## 8. OTA updates after launch
+## 9. OTA updates after launch
 
 ```bash
 eas update --channel preview    --message "what changed"
@@ -243,7 +330,7 @@ app/                       Expo Router screens
   checkin.tsx                   daily mood/sleep/HALT check-in
   crisis.tsx                    locale- and time-aware crisis resources
   settings.tsx / add-track.tsx
-  (tabs)/                      Today · Companion (Offline Coach) · You
+  (tabs)/                      Today · Companion (AI chat + Offline Coach) · You
 
 src/
   domain/types.ts             Track, Baseline, events, Thread beads, Settings
@@ -252,6 +339,9 @@ src/
   lib/supabase.ts              Supabase client
   lib/auth.ts                  sign up / sign in / sign out / hydrate
   lib/sync.ts                  per-entity push (upsert) + full pull
+  lib/geminiCompanion.ts       AI chat + deterministic attribution/crisis filters
+  lib/dates.ts                 local (not UTC) day keys — see the note inside
+  lib/notifications.ts         contextual permission + the 24h lapse follow-up
   constants/theme.ts           palette, spacing, motion tokens
   constants/translations.ts    en / hi / bn copy
   components/motion/           Breath, Tide, Thread, Ember
@@ -283,8 +373,24 @@ supabase/schema.sql          the full production schema — tables, RLS, trigger
 - **`VibrationEffect.Composition` haptic primitives** aren't exposed by
   `expo-haptics`; `src/lib/haptics.ts` maps onto the iOS-style
   impact/notification/selection API instead.
-- **AI companion (doc 02)** is intentionally not built — only the scripted
-  Offline Coach ships, per the blueprint's own phased roadmap.
+- **AI companion key exposure.** The Companion tab's open-conversation mode
+  (`src/lib/geminiCompanion.ts`) calls the Gemini API directly from the
+  client using `EXPO_PUBLIC_GEMINI_API_KEY`. The blueprint (master doc
+  §18.4, doc 02 §11) explicitly calls for routing LLM calls through your
+  own stateless proxy (rate limiting, safety pre/post filter, key never in
+  the APK) instead — that proxy isn't built here. What *is* built matches
+  doc 02 §6.1's floor regardless of the proxy: the deterministic client-side
+  pre-filter (attribution, crisis, withdrawal signals) runs before any
+  network call and never depends on the model. Before a public launch,
+  either accept the key-extraction risk with a tightly quota-restricted key
+  (see §5 above) or build the proxy and swap the one `fetch` call in
+  `geminiCompanion.ts` to point at it.
+- **Companion safety eval suite (doc 02 §9)** — the 100-scenario golden set
+  and red-team regression the blueprint gates every companion release on
+  isn't built. The three deterministic pre-filters (attribution/crisis/
+  withdrawal) exist, but there's no automated suite verifying the model's
+  *generated* replies stay in-bounds (brevity, no unsolicited advice, no
+  shame markers) before a release ships.
 - **hi/bn copy** is a best-effort draft, not reviewed by a native speaker.
   Treat the crisis and alcohol-gate strings as provisional until reviewed.
 - **Real-time multi-device sync** isn't wired up (Supabase Realtime
