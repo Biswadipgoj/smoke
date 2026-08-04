@@ -69,6 +69,8 @@ export async function hydrateFromRemote(): Promise<void> {
     intentions: snapshot.intentions,
   });
   await useDhruvStore.getState().saveToStorage();
+  // Days that passed while signed out still count — backfill after the pull.
+  useDhruvStore.getState().ensureDayBeads();
 }
 
 /** Clears local state on sign-out — nothing from the previous account should linger on a shared device. */

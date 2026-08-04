@@ -115,11 +115,17 @@ export default function Companion() {
               </View>
             )}
 
-            {messages.length === 0 && (
+            {/* The guided paths stay available for the whole session, never
+                hidden behind the chat. The network-failure reply tells the
+                user "I can still walk you through this below" — that has to
+                remain true at the exact moment the network is down. */}
+            {
               <>
-                <Text style={[styles.prompt, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
-                  {category ? undefined : t.companionGuidedPathsBelow}
-                </Text>
+                {!category && (
+                  <Text style={[styles.prompt, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
+                    {t.companionGuidedPathsBelow}
+                  </Text>
+                )}
 
                 {!category && (
                   <View style={styles.categoryGrid}>
@@ -175,7 +181,7 @@ export default function Companion() {
                   <Text style={[styles.supportLinkText, { color: colors.textMuted }]}>{t.todayGetSupport}</Text>
                 </TouchableOpacity>
               </>
-            )}
+            }
           </ScrollView>
 
           <View style={[styles.inputRow, { borderTopColor: colors.hairline }]}>

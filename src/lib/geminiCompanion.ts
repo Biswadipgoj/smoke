@@ -87,7 +87,7 @@ export async function sendToCompanion(history: ChatTurn[], activeTracks: TrackTy
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: buildSystemPrompt(activeTracks) }] },
+        systemInstruction: { parts: [{ text: buildSystemPrompt(activeTracks) }] },
         contents,
         generationConfig: { temperature: 0.8, maxOutputTokens: 300 },
       }),

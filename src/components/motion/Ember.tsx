@@ -4,7 +4,7 @@
 // content dims, one line fades in, held for a beat. Grief needs more time
 // than celebration — this runs slower than any success animation in the app.
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { Colors, MotionDuration, FontFamily, FontSize } from '../../constants/theme';

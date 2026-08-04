@@ -32,7 +32,7 @@ export type TranslationKeys = {
   formCigarette: string; formBidi: string; formGutkha: string; formPaanMasala: string; formKhaini: string; formVape: string;
   baselineAlcoholDaysPerWeek: string; baselineAlcoholSpend: string; baselineAlcoholDrinks: string;
   baselinePornSessionsPerWeek: string; baselinePornSessionLength: string; baselinePornMinimalMode: string; baselinePornMinimalModeDesc: string;
-  onbQuitDateTitle: string; onbQuitDateSubtitle: string; onbQuitDateHaveNotYet: string; onbQuitDateSetDate: string;
+  onbQuitDateTitle: string; onbQuitDateSubtitle: string; onbQuitDateHaveNotYet: string; onbQuitDateToday: string; onbQuitDateSetDate: string; onbQuitDateDaysAgo: string;
   onbAlcoholGateTitle: string; onbAlcoholGateBody: string; onbAlcoholGateQ1: string; onbAlcoholGateQ2: string;
   onbAlcoholGateWarning: string; onbAlcoholGateAck: string;
   onbDone: string;
@@ -122,7 +122,7 @@ const en: TranslationKeys = {
   baselinePornSessionsPerWeek: 'Sessions per week (roughly)', baselinePornSessionLength: 'Typical session length',
   baselinePornMinimalMode: 'Log minimally', baselinePornMinimalModeDesc: 'Some people find detailed tracking helpful. Others find it makes things worse. With this on, we’ll just log that it happened — nothing else.',
   onbQuitDateTitle: 'Quit date', onbQuitDateSubtitle: 'Optional. “I haven’t stopped yet” is a completely valid place to start.',
-  onbQuitDateHaveNotYet: 'I haven’t stopped yet', onbQuitDateSetDate: 'Set a date',
+  onbQuitDateHaveNotYet: 'I haven’t stopped yet', onbQuitDateToday: 'I stopped today', onbQuitDateSetDate: 'A while ago', onbQuitDateDaysAgo: 'How many days ago?',
   onbAlcoholGateTitle: 'Before you start — a safety check',
   onbAlcoholGateBody: 'Stopping alcohol suddenly after heavy daily drinking can be medically dangerous, including seizures. This is not something to manage alone.',
   onbAlcoholGateQ1: 'Do you drink heavily every day?', onbAlcoholGateQ2: 'Have you ever had tremor, sweating, nausea on waking, or a seizure when you tried to stop?',
@@ -207,7 +207,7 @@ const hi: TranslationKeys = {
   baselinePornSessionsPerWeek: 'हफ्ते में कितनी बार (लगभग)', baselinePornSessionLength: 'सामान्य समय',
   baselinePornMinimalMode: 'सिर्फ न्यूनतम नोट करें', baselinePornMinimalModeDesc: 'कुछ लोगों के लिए विस्तृत ट्रैकिंग मददगार होती है, कुछ के लिए यह और मुश्किल कर देती है। यह चालू करने पर हम बस इतना नोट करेंगे कि हुआ — बाकी कुछ नहीं।',
   onbQuitDateTitle: 'छोड़ने की तारीख', onbQuitDateSubtitle: 'वैकल्पिक। "मैंने अभी शुरुआत नहीं की" भी बिल्कुल सही जगह है।',
-  onbQuitDateHaveNotYet: 'मैंने अभी शुरुआत नहीं की', onbQuitDateSetDate: 'तारीख तय करें',
+  onbQuitDateHaveNotYet: 'मैंने अभी शुरुआत नहीं की', onbQuitDateToday: 'मैंने आज छोड़ा', onbQuitDateSetDate: 'कुछ समय पहले', onbQuitDateDaysAgo: 'कितने दिन पहले?',
   onbAlcoholGateTitle: 'शुरू करने से पहले — एक सुरक्षा जांच',
   onbAlcoholGateBody: 'रोज़ भारी मात्रा में पीने के बाद अचानक शराब छोड़ना चिकित्सकीय रूप से खतरनाक हो सकता है, यहां तक कि दौरे भी आ सकते हैं। यह अकेले संभालने वाली बात नहीं है।',
   onbAlcoholGateQ1: 'क्या आप रोज़ भारी मात्रा में पीते हैं?', onbAlcoholGateQ2: 'क्या छोड़ने की कोशिश में कभी कंपकंपी, पसीना, सुबह जी मिचलाना, या दौरा हुआ है?',
@@ -281,7 +281,7 @@ const bn: TranslationKeys = {
   baselinePornSessionsPerWeek: 'সপ্তাহে কতবার (আনুমানিক)', baselinePornSessionLength: 'সাধারণ সময়কাল',
   baselinePornMinimalMode: 'শুধু ন্যূনতম নথিভুক্ত করুন', baselinePornMinimalModeDesc: 'কারও কারও কাছে বিস্তারিত ট্র্যাকিং সহায়ক, কারও কারও কাছে তা আরও কঠিন করে তোলে। এটি চালু থাকলে আমরা শুধু এটুকু নথিভুক্ত করব যে এটি ঘটেছে — আর কিছু নয়।',
   onbQuitDateTitle: 'ছাড়ার তারিখ', onbQuitDateSubtitle: 'ঐচ্ছিক। "আমি এখনও শুরু করিনি" এটাও পুরোপুরি বৈধ একটি শুরু।',
-  onbQuitDateHaveNotYet: 'আমি এখনও শুরু করিনি', onbQuitDateSetDate: 'একটি তারিখ ঠিক করুন',
+  onbQuitDateHaveNotYet: 'আমি এখনও শুরু করিনি', onbQuitDateToday: 'আমি আজ ছেড়েছি', onbQuitDateSetDate: 'কিছুদিন আগে', onbQuitDateDaysAgo: 'কত দিন আগে?',
   onbAlcoholGateTitle: 'শুরুর আগে — একটি নিরাপত্তা পরীক্ষা',
   onbAlcoholGateBody: 'প্রতিদিন প্রচুর মদ্যপানের পর হঠাৎ বন্ধ করা চিকিৎসাগতভাবে বিপজ্জনক হতে পারে, এমনকি খিঁচুনিও হতে পারে। এটি একা সামলানোর বিষয় নয়।',
   onbAlcoholGateQ1: 'আপনি কি প্রতিদিন প্রচুর পরিমাণে পান করেন?', onbAlcoholGateQ2: 'বন্ধ করার চেষ্টা করার সময় কখনো কাঁপুনি, ঘাম, সকালে বমি বমি ভাব বা খিঁচুনি হয়েছে?',

@@ -143,9 +143,9 @@ app. Restrict it in [Google AI Studio](https://aistudio.google.com/apikey)
 leak as a "rotate it" event, not a "we got breached" event. See **Known
 gaps** at the bottom of this file for the proper long-term fix (a proxy).
 
-## 6. Google Play service account key (required before building the AAB)
+## 6. Google service account key — fixes the non-interactive build failure
 
-**Do this before your first `production` build**, or the build fails with:
+If a CI/`--non-interactive` build dies with:
 
 ```
 Looking up credentials configuration for com.smokeless.ai...
@@ -153,42 +153,70 @@ Google Service Account Keys cannot be set up in --non-interactive mode.
 Error: build:internal command failed.
 ```
 
-This happens because `eas.json`'s `production` build profile shares a name
-with a `submit.production` profile, and EAS resolves that profile's Android
-submit credentials — a Google **service account** key — as part of the
-build's credential setup, not just at submit time. In CI (`--non-interactive`),
-EAS can't prompt you to create one on the spot, so the build aborts. This is
-a one-time setup that only you can do (it needs your own Google Play Console
-access), run it locally/interactively once:
+…it means EAS wants a Google **service account key** that hasn't been stored
+on your EAS project yet, and `--non-interactive` forbids it from prompting
+you to create one mid-build. **The one-time setup below is the fix, and only
+the account owner can do it** — it needs your Firebase/Play Console access,
+so it can't be done from a PR.
 
-1. **Google Play Console** → **Setup → API access** → **Choose a project to
-   link** (or create one) → this links a Google Cloud project to your Play
-   Console account.
+There are two *different* Google service account keys in an Android Expo
+project, and it's worth knowing which one you're being asked for:
+
+| Key | Needed for | Set up under |
+|---|---|---|
+| **FCM V1** | Android notifications via `expo-notifications` | Firebase project → service account |
+| **Play submissions** | `eas submit` uploading to the Play Store | Play Console → API access |
+
+**The likely culprit here is the FCM V1 key**, because this project depends
+on `expo-notifications` and EAS resolves Android push credentials during the
+build's credential step — which is exactly where the log above stops, right
+after the keystore was resolved successfully. Worth knowing: Dhruv only ever
+sends **local** notifications (the single 24h post-lapse follow-up), so it
+does not functionally need push — but EAS's credential check keys off the
+package being present, not off how you use it.
+
+Rather than guess, confirm which one is missing in one command:
+
+```bash
+eas credentials
+# → Android → production → inspect "Push Notifications (FCM V1)"
+#   and "Google Service Account" entries
+```
+
+### Setting up the FCM V1 key (Android notifications)
+
+1. Create/open a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+   and add an Android app with package name `com.smokeless.ai`.
+2. Firebase **Project settings → Service accounts → Generate new private
+   key** → downloads a `.json`. **Never commit it.**
+3. `eas credentials` → **Android** → **production** → **Push Notifications
+   (FCM V1)** → **Set up a Google Service Account Key** → point it at that
+   file. It's then stored on EAS and every future non-interactive build
+   resolves it automatically.
+
+### Setting up the Play submissions key (only needed for `eas submit`)
+
+1. **Play Console → Setup → API access → Choose a project to link** (or
+   create one), linking a Google Cloud project to your Play Console account.
 2. In that Google Cloud project: **IAM & Admin → Service Accounts → Create
-   service account**. Any name is fine (e.g. `eas-release`).
-3. Back in Play Console **API access**, find the new service account under
-   **Service accounts** and click **Grant access**. Give it at least
-   **Release manager** permission (enough to upload builds; add **Financial
-   data** only if you also want it managing pricing).
-4. In Google Cloud, open the service account → **Keys → Add key → Create
-   new key → JSON**. This downloads a `.json` file — **never commit it to
-   the repo**.
-5. Upload it to EAS as a file-type environment variable (this is what
-   `eas.json`'s `serviceAccountKeyPath: "$GOOGLE_SERVICE_ACCOUNT_KEY"`
-   resolves at build/submit time):
+   service account** (e.g. `eas-release`).
+3. Back in Play Console **API access**, find it under **Service accounts** →
+   **Grant access** → at least **Release manager**.
+4. Google Cloud → the service account → **Keys → Add key → Create new key →
+   JSON**. **Never commit it.**
+5. Upload it to EAS as a file-type env var — this is what `eas.json`'s
+   `submit.production.android.serviceAccountKeyPath: "$GOOGLE_SERVICE_ACCOUNT_KEY"`
+   resolves:
 
    ```bash
    eas env:create --name GOOGLE_SERVICE_ACCOUNT_KEY --type file \
-     --value ./path/to/your-downloaded-key.json \
+     --value ./path/to/play-service-account.json \
      --visibility secret --environment production
    ```
 
-Once that's created, both `eas build --profile production` and
-`eas submit` resolve it automatically — including from CI, since it's
-stored on EAS, not read from a local file at build time in the pipeline.
-
-The `production-apk` profile doesn't share a name with a submit profile, so
-it was never affected by this — only the AAB (`production`) build was.
+> If you don't intend to use `eas submit` at all (uploading the AAB through
+> the Play Console UI by hand instead), you can delete the `submit` block
+> from `eas.json` entirely and skip this second key.
 
 ## 7. Build
 
@@ -302,7 +330,7 @@ app/                       Expo Router screens
   checkin.tsx                   daily mood/sleep/HALT check-in
   crisis.tsx                    locale- and time-aware crisis resources
   settings.tsx / add-track.tsx
-  (tabs)/                      Today · Companion (Offline Coach) · You
+  (tabs)/                      Today · Companion (AI chat + Offline Coach) · You
 
 src/
   domain/types.ts             Track, Baseline, events, Thread beads, Settings
@@ -311,6 +339,9 @@ src/
   lib/supabase.ts              Supabase client
   lib/auth.ts                  sign up / sign in / sign out / hydrate
   lib/sync.ts                  per-entity push (upsert) + full pull
+  lib/geminiCompanion.ts       AI chat + deterministic attribution/crisis filters
+  lib/dates.ts                 local (not UTC) day keys — see the note inside
+  lib/notifications.ts         contextual permission + the 24h lapse follow-up
   constants/theme.ts           palette, spacing, motion tokens
   constants/translations.ts    en / hi / bn copy
   components/motion/           Breath, Tide, Thread, Ember

@@ -65,7 +65,7 @@ function Bead({ bead, isNew }: { bead: ThreadBead; isNew: boolean }) {
   );
 }
 
-export function Thread({ beads, emptyLabel }: { beads: ThreadBead[]; emptyLabel?: string }) {
+export function Thread({ beads }: { beads: ThreadBead[] }) {
   const reducedMotion = useReducedMotion();
   const prevCountRef = useRef(beads.length);
   const [lastNewId, setLastNewId] = useState<string | null>(null);

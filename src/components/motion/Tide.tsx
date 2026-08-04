@@ -24,6 +24,10 @@ interface TideProps {
 }
 
 function wavePath(width: number, baseY: number, amplitude: number, phase: number, frequency: number): string {
+  // Runs inside useAnimatedProps, i.e. on the UI thread — without this
+  // directive Reanimated throws "tried to call a non-worklet function on the
+  // UI thread" the moment the urge screen mounts.
+  'worklet';
   const points = 24;
   let d = `M0,${baseY}`;
   for (let i = 0; i <= points; i++) {

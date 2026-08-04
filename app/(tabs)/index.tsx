@@ -12,6 +12,7 @@ import { Backdrop } from '../../src/components/ui/Backdrop';
 import { Thread } from '../../src/components/motion/Thread';
 import { haptic } from '../../src/lib/haptics';
 import { registerUrgeQuickAction } from '../../src/lib/quickActions';
+import { localDateKey } from '../../src/lib/dates';
 
 export default function Today() {
   const { t } = useTranslation();
@@ -29,15 +30,22 @@ export default function Today() {
   }, [t]);
 
   const hasCheckedInToday = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateKey();
     return checkIns.some((c) => c.date === today);
   }, [checkIns]);
 
   const activeTracks = tracks.filter((tr) => tr.active);
 
+  const ensureDayBeads = useDhruvStore((s) => s.ensureDayBeads);
+
   React.useEffect(() => {
     registerUrgeQuickAction(t.todayUrgeButton);
   }, [t.todayUrgeButton]);
+
+  // A day free counts whether or not anything was logged that day.
+  React.useEffect(() => {
+    ensureDayBeads();
+  }, [ensureDayBeads]);
 
   const openUrge = async () => {
     await haptic('begin');

@@ -17,6 +17,7 @@ import {
   pushProfile, pushTrack, pushEvent, pushUrge, pushLapse, pushCheckIn, pushBead,
   pushIntention, deleteIntentionRemote, deleteAllRemote,
 } from '../lib/sync';
+import { localDateKey, startOfLocalDay } from '../lib/dates';
 
 const STORAGE_KEY = 'dhruv_store_v1';
 
@@ -50,6 +51,8 @@ interface DhruvState {
   // Lifecycle
   loadFromStorage: () => Promise<void>;
   saveToStorage: () => Promise<void>;
+  /** Accrues (and backfills) day beads. Call on app open and after hydrating. */
+  ensureDayBeads: () => void;
 
   // Profile / settings
   completeOnboarding: () => void;
@@ -84,12 +87,52 @@ interface DhruvState {
   deleteEverything: () => Promise<void>;
 }
 
-function addDayBeadIfNeeded(beads: ThreadBead[]): { beads: ThreadBead[]; added: ThreadBead | null } {
-  const today = new Date().toISOString().slice(0, 10);
-  const hasTodayBead = beads.some((b) => b.type === 'day' && b.createdAt.slice(0, 10) === today);
-  if (hasTodayBead) return { beads, added: null };
-  const bead: ThreadBead = { id: uid(), type: 'day', track: null, createdAt: new Date().toISOString() };
-  return { beads: [...beads, bead], added: bead };
+const MAX_BACKFILL_DAYS = 400;
+
+/**
+ * Day beads accrue per calendar day the user has had at least one track, and
+ * are backfilled for days the app wasn't opened — otherwise the Thread and
+ * "total days free" would only ever grow on days the user happened to log an
+ * urge, which is precisely the metric the Recovery Capital model is built on
+ * (master doc §7.2). Backfill is capped so a long absence can't produce an
+ * unbounded write.
+ */
+function buildMissingDayBeads(beads: ThreadBead[], tracks: Track[]): ThreadBead[] {
+  if (tracks.length === 0) return [];
+
+  // Keys are compared in LOCAL time on both sides — see src/lib/dates.ts for
+  // why a UTC key would re-create every bead on each open at UTC+5:30/+6.
+  const dayKeys = new Set(
+    beads.filter((b) => b.type === 'day').map((b) => localDateKey(new Date(b.createdAt)))
+  );
+  const earliestTrack = tracks.reduce(
+    (min, t) => (t.startedAt < min ? t.startedAt : min),
+    tracks[0].startedAt
+  );
+
+  const today = startOfLocalDay();
+  const backfillFloor = startOfLocalDay();
+  backfillFloor.setDate(backfillFloor.getDate() - MAX_BACKFILL_DAYS);
+
+  const trackStart = startOfLocalDay(new Date(earliestTrack));
+  // Step a real Date rather than adding 86_400_000ms, so a DST transition
+  // can't shift the cursor off midnight and skip or duplicate a day.
+  const cursor = trackStart > backfillFloor ? trackStart : backfillFloor;
+
+  const created: ThreadBead[] = [];
+  while (cursor <= today) {
+    const key = localDateKey(cursor);
+    if (!dayKeys.has(key)) {
+      dayKeys.add(key);
+      // Local midday: far enough from either midnight that the bead's own
+      // local date key round-trips to the same day it was created for.
+      const at = new Date(cursor.getTime());
+      at.setHours(12, 0, 0, 0);
+      created.push({ id: uid(), type: 'day', track: null, createdAt: at.toISOString() });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return created;
 }
 
 export const useDhruvStore = create<DhruvState>((set, get) => ({
@@ -117,6 +160,15 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
     } catch {
       set({ hydrated: true });
     }
+  },
+
+  ensureDayBeads: () => {
+    const { beads, tracks } = get();
+    const created = buildMissingDayBeads(beads, tracks);
+    if (created.length === 0) return;
+    set({ beads: [...beads, ...created] });
+    get().saveToStorage();
+    created.forEach(pushBead);
   },
 
   saveToStorage: async () => {
@@ -226,7 +278,6 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
 
   closeUrge: (urgeId, outcome, usedBreathing) => {
     let newBead: ThreadBead | null = null;
-    let dayBead: ThreadBead | null = null;
     set((s) => {
       const urges = s.urges.map((u) =>
         u.id === urgeId ? { ...u, endedAt: new Date().toISOString(), outcome, usedBreathing } : u
@@ -237,15 +288,13 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
         newBead = { id: uid(), type: 'surf', track: urge?.track ?? null, createdAt: new Date().toISOString() };
         beads = [...beads, newBead];
       }
-      const withDay = addDayBeadIfNeeded(beads);
-      dayBead = withDay.added;
-      return { urges, beads: withDay.beads };
+      return { urges, beads };
     });
     get().saveToStorage();
     const urge = get().urges.find((u) => u.id === urgeId);
     if (urge) pushUrge(urge);
     if (newBead) pushBead(newBead);
-    if (dayBead) pushBead(dayBead);
+    get().ensureDayBeads();
   },
 
   recordLapse: (track, trigger, note, linkedUrgeId) => {
@@ -260,8 +309,12 @@ export const useDhruvStore = create<DhruvState>((set, get) => ({
   },
 
   recordCheckIn: (checkIn) => {
-    const withId = { id: uid(), ...checkIn };
-    set((s) => ({ checkIns: [...s.checkIns, withId] }));
+    // One check-in per day (the server enforces unique(user_id, date) too) —
+    // re-checking in replaces the day's entry rather than stacking duplicates
+    // that would diverge from the server on the next pull.
+    const existing = get().checkIns.find((c) => c.date === checkIn.date);
+    const withId = { id: existing?.id ?? uid(), ...checkIn };
+    set((s) => ({ checkIns: [...s.checkIns.filter((c) => c.date !== checkIn.date), withId] }));
     get().saveToStorage();
     pushCheckIn(withId);
   },

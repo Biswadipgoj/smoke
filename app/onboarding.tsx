@@ -53,9 +53,7 @@ export default function Onboarding() {
   const { t } = useTranslation();
   const setLocale = useDhruvStore((s) => s.setLocale);
   const addTrack = useDhruvStore((s) => s.addTrack);
-  const acknowledgeAlcoholGate = useDhruvStore((s) => s.acknowledgeAlcoholGate);
   const completeOnboarding = useDhruvStore((s) => s.completeOnboarding);
-  const tracksInStore = useDhruvStore((s) => s.tracks);
 
   const [step, setStep] = useState<WizardStep>('welcome');
   const [selectedLocale, setSelectedLocale] = useState<Locale>('en');
@@ -107,7 +105,9 @@ export default function Onboarding() {
         typicalDrinksPerOccasion: Math.max(0, parseInt(d.drinksPerOccasion) || 0),
         heavyDailyDrinking: d.heavyDaily,
         withdrawalSymptoms: d.withdrawal,
-        medicalGateAcknowledged: false,
+        // The gate only appears when screening flags it; when it does, this
+        // is only reachable after an explicit acknowledgement (§15.6).
+        medicalGateAcknowledged: !needsGate || gateAcked,
       };
       return b;
     }
@@ -144,13 +144,6 @@ export default function Onboarding() {
       addTrack(track, baselineFor(track, d), quitDateFor(d));
     }
     completeOnboarding();
-    // If the alcohol gate fired, mark it acknowledged on the just-created track.
-    if (needsGate) {
-      setTimeout(() => {
-        const created = useDhruvStore.getState().tracks.find((tr) => tr.type === 'alcohol');
-        if (created) acknowledgeAlcoholGate(created.id);
-      }, 0);
-    }
     router.replace('/(tabs)');
   }
 
@@ -258,14 +251,14 @@ export default function Onboarding() {
                     <Text style={[styles.chipText, draft.quitChoice === 'not_yet' && styles.chipTextActive]}>{t.onbQuitDateHaveNotYet}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.chip, draft.quitChoice === 'today' && styles.chipActive]} onPress={() => updateDraft(currentTrack, { quitChoice: 'today' })}>
-                    <Text style={[styles.chipText, draft.quitChoice === 'today' && styles.chipTextActive]}>{t.done}</Text>
+                    <Text style={[styles.chipText, draft.quitChoice === 'today' && styles.chipTextActive]}>{t.onbQuitDateToday}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.chip, draft.quitChoice === 'a_while_ago' && styles.chipActive]} onPress={() => updateDraft(currentTrack, { quitChoice: 'a_while_ago' })}>
                     <Text style={[styles.chipText, draft.quitChoice === 'a_while_ago' && styles.chipTextActive]}>{t.onbQuitDateSetDate}</Text>
                   </TouchableOpacity>
                 </View>
                 {draft.quitChoice === 'a_while_ago' && (
-                  <LabeledInput label="Days ago" value={draft.daysAgo} onChangeText={(v) => updateDraft(currentTrack, { daysAgo: v })} keyboardType="numeric" />
+                  <LabeledInput label={t.onbQuitDateDaysAgo} value={draft.daysAgo} onChangeText={(v) => updateDraft(currentTrack, { daysAgo: v })} keyboardType="numeric" />
                 )}
 
                 <PrimaryButton label={t.next} onPress={goNextFromBaseline} size="lg" style={styles.fullWidthBtn} />
