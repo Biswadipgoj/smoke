@@ -1,236 +1,176 @@
--- Dhruv — production schema
+-- supabase/schema.sql
 -- ─────────────────────────────────────────────────────────────────────────────
--- Server is the source of truth (account-based backend). Every table is
--- scoped to auth.uid() via Row Level Security — a user can only ever read or
--- write their own rows. Run this once against a fresh Supabase project's SQL
--- Editor (or via `supabase db push` / migrations — see SETUP.md).
+-- SmokeLess AI — Postgres schema (§19-20, §24).
 --
--- Maps 1:1 onto src/domain/types.ts. Track-specific event/baseline fields are
--- stored as jsonb rather than one column per track type — the three tracks
--- (tobacco/alcohol/porn) have different shapes and this avoids a wide table
--- of mostly-null columns while keeping one queryable events table.
+-- Run this once in the Supabase SQL editor on a new project. It is idempotent:
+-- re-running it is safe.
+--
+-- Two rules hold across every table here:
+--   1. RLS is on, and every policy is `auth.uid() = user_id`. No cross-user
+--      read is possible through the API even if a client query is wrong.
+--   2. Every table cascades from auth.users, so account deletion is a single
+--      `delete from auth.users` and cannot leave orphaned rows behind.
+--
+-- Column names and types mirror src/types/index.ts and the local SQLite schema
+-- in src/services/db/localDb.ts. Change one, change all three.
+--
+-- ─────────────────────────────────────────────────────────────────────────────
+-- TODO (before this goes further than a personal build): field-level
+-- encryption for the free-text `note` columns on cigarette_logs and
+-- craving_logs.
+--
+-- RLS stops one user reading another's rows. It does not protect those rows
+-- from a leaked service-role key or a policy mistake, and `note` is
+-- effectively an addiction-history journal — a much worse thing to leak than a
+-- to-do list. The right shape is client-side encryption with a key derived
+-- from the user's credentials, so the server stores ciphertext it cannot read.
+-- That is deliberately flagged here rather than half-implemented: shipping
+-- crypto that looks like it works is worse than a clearly marked gap.
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- ── profiles ─────────────────────────────────────────────────────────────────
--- One row per auth user. id IS the auth.users id (no separate surrogate key).
-
-create table if not exists profiles (
+-- ── Profiles ─────────────────────────────────────────────────────────────────
+create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
-  created_at timestamptz not null default now(),
+  locale text not null default 'en',
+  coach_style text not null default 'calm',
+  baseline_per_day integer not null default 10,
+  started_at_ms bigint not null,
+  quit_date_ms bigint,
   onboarding_complete boolean not null default false,
-  locale text not null default 'en' check (locale in ('en', 'hi', 'bn')),
-  theme_mode text not null default 'dark' check (theme_mode in ('dark', 'light', 'system', 'oled')),
-  reduced_motion boolean not null default false,
-  haptics_mode text not null default 'full' check (haptics_mode in ('full', 'essential', 'off')),
-  app_lock_enabled boolean not null default false,
-  stealth_mode_enabled boolean not null default false,
-  notifications_enabled boolean not null default true,
-  currency text not null default '₹' check (currency in ('₹', '৳', '$')),
+  currency text not null default '₹',
   updated_at timestamptz not null default now()
 );
 
--- ── tracks ───────────────────────────────────────────────────────────────────
--- Multi-track: a user can have up to one active row per type at a time, but
--- history is never deleted, so no uniqueness constraint on (user_id, type).
+alter table public.profiles enable row level security;
 
-create table if not exists tracks (
-  id text primary key,
+drop policy if exists "profiles are self-service" on public.profiles;
+create policy "profiles are self-service" on public.profiles
+  for all using (auth.uid() = id) with check (auth.uid() = id);
+
+-- ── Cigarette logs ───────────────────────────────────────────────────────────
+create table if not exists public.cigarette_logs (
+  id uuid primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
-  type text not null check (type in ('tobacco', 'alcohol', 'porn')),
-  started_at timestamptz not null default now(),
-  quit_date timestamptz,
-  baseline jsonb not null,
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
+  timestamp_ms bigint not null,
+  count integer not null default 1,
+  trigger text,
+  note text, -- see the encryption TODO at the top of this file
+  from_craving boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- Indexed on timestamp from the start rather than after the timeline gets
+-- slow (§27). Every read in the app is "most recent first, for this user".
+create index if not exists cigarette_logs_user_ts_idx
+  on public.cigarette_logs (user_id, timestamp_ms desc);
+
+alter table public.cigarette_logs enable row level security;
+
+drop policy if exists "own cigarette logs" on public.cigarette_logs;
+create policy "own cigarette logs" on public.cigarette_logs
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Craving logs ─────────────────────────────────────────────────────────────
+create table if not exists public.craving_logs (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  timestamp_ms bigint not null,
+  trigger text not null,
+  intensity smallint not null check (intensity between 1 and 5),
+  asked_delay_minutes integer not null,
+  actual_delay_minutes integer not null default 0,
+  intervention text,
+  -- 'smoked' is a neutral value here, exactly like 'delayed'. Nothing in the
+  -- schema, the app or the copy treats it as a failure state (§1).
+  outcome text not null check (outcome in ('delayed', 'smoked', 'abandoned')),
+  note text, -- see the encryption TODO at the top of this file
+  created_at timestamptz not null default now()
+);
+
+create index if not exists craving_logs_user_ts_idx
+  on public.craving_logs (user_id, timestamp_ms desc);
+
+alter table public.craving_logs enable row level security;
+
+drop policy if exists "own craving logs" on public.craving_logs;
+create policy "own craving logs" on public.craving_logs
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Price history ────────────────────────────────────────────────────────────
+-- Price is time-versioned, not a constant (§15): a price rise must not
+-- retroactively rewrite what every earlier cigarette cost. Cost queries join a
+-- log against whichever row was effective at that log's timestamp.
+create table if not exists public.price_history (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  price_per_cigarette numeric(10, 2) not null check (price_per_cigarette >= 0),
+  currency text not null default '₹',
+  effective_from_ms bigint not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists price_history_user_from_idx
+  on public.price_history (user_id, effective_from_ms desc);
+
+alter table public.price_history enable row level security;
+
+drop policy if exists "own price history" on public.price_history;
+create policy "own price history" on public.price_history
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Goals ────────────────────────────────────────────────────────────────────
+create table if not exists public.goals (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  target_per_day integer not null check (target_per_day >= 0),
+  created_at_ms bigint not null,
+  target_date_ms bigint,
+  achieved_at_ms bigint,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists goals_user_created_idx
+  on public.goals (user_id, created_at_ms desc);
+
+alter table public.goals enable row level security;
+
+drop policy if exists "own goals" on public.goals;
+create policy "own goals" on public.goals
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── AI memory ────────────────────────────────────────────────────────────────
+-- One row per user. Aggregated behavioural summary only — top triggers, what
+-- has worked, preferred tone (§6). Raw chat transcripts are never written
+-- here, or anywhere else on the server; the app keeps a short rolling window
+-- in memory for conversational continuity and drops it when it closes.
+create table if not exists public.ai_memory (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  memory jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
 
-create index if not exists tracks_user_idx on tracks (user_id, type);
+alter table public.ai_memory enable row level security;
 
--- ── consumption_events ───────────────────────────────────────────────────────
--- One polymorphic table for TobaccoEvent | AlcoholEvent | PornEvent. Shared
--- columns are indexed; track-specific fields (quantity/unit_cost, spend,
--- duration_bucket, ...) live in `data`.
+drop policy if exists "own ai memory" on public.ai_memory;
+create policy "own ai memory" on public.ai_memory
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create table if not exists consumption_events (
-  id text primary key,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  track text not null check (track in ('tobacco', 'alcohol', 'porn')),
-  "timestamp" timestamptz not null,
-  logged_at timestamptz not null default now(),
-  trigger text[] not null default '{}',
-  location_context text,
-  mood text,
-  note text,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists consumption_events_user_idx on consumption_events (user_id, track, "timestamp" desc);
-
--- ── urges ────────────────────────────────────────────────────────────────────
--- The urge-surfing episode. intensity_curve is the within-episode re-rating
--- series that powers the personal urge-decay stat (master doc §7.3).
-
-create table if not exists urges (
-  id text primary key,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  track text not null check (track in ('tobacco', 'alcohol', 'porn')),
-  started_at timestamptz not null,
-  ended_at timestamptz,
-  initial_intensity smallint not null check (initial_intensity between 1 and 10),
-  intensity_curve jsonb not null default '[]'::jsonb,
-  trigger text[] not null default '{}',
-  location_context text,
-  outcome text check (outcome in ('surfed', 'alternative', 'lapsed')),
-  used_breathing boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists urges_user_idx on urges (user_id, track, started_at desc);
-
--- ── lapses ───────────────────────────────────────────────────────────────────
--- No penalty, ever. Rows here only ever get inserted — the app never
--- deletes or "resets" a lapse (master doc §7.2, §7.6).
-
-create table if not exists lapses (
-  id text primary key,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  track text not null check (track in ('tobacco', 'alcohol', 'porn')),
-  "timestamp" timestamptz not null,
-  trigger text[] not null default '{}',
-  note text,
-  linked_urge_id text references urges (id) on delete set null,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists lapses_user_idx on lapses (user_id, track, "timestamp" desc);
-
--- ── check_ins ────────────────────────────────────────────────────────────────
--- Once daily, optional, cross-track.
-
-create table if not exists check_ins (
-  id text primary key,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  date date not null,
-  mood text check (mood in ('good', 'okay', 'low', 'rough')),
-  sleep_quality text check (sleep_quality in ('good', 'okay', 'poor')),
-  halt_hungry boolean not null default false,
-  halt_angry boolean not null default false,
-  halt_lonely boolean not null default false,
-  halt_tired boolean not null default false,
-  created_at timestamptz not null default now(),
-  unique (user_id, date)
-);
-
--- ── thread_beads ─────────────────────────────────────────────────────────────
--- The Thread. Append-only — never updated, never deleted, never reordered.
--- This table IS the non-resetting progress model (master doc §2.2, §7.2).
-
-create table if not exists thread_beads (
-  id text primary key,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  type text not null check (type in ('day', 'surf', 'ash')),
-  track text check (track in ('tobacco', 'alcohol', 'porn')),
-  created_at timestamptz not null default now()
-);
-
-create index if not exists thread_beads_user_idx on thread_beads (user_id, created_at);
-
--- ── implementation_intentions ───────────────────────────────────────────────
-
-create table if not exists implementation_intentions (
-  id text primary key,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  track text not null check (track in ('tobacco', 'alcohol', 'porn')),
-  cue_type text not null check (cue_type in ('time', 'place', 'emotion', 'social')),
-  cue text not null,
-  response text not null,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists implementation_intentions_user_idx on implementation_intentions (user_id);
-
--- ── updated_at maintenance ──────────────────────────────────────────────────
-
-create or replace function set_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
-drop trigger if exists profiles_set_updated_at on profiles;
-create trigger profiles_set_updated_at before update on profiles
-  for each row execute function set_updated_at();
-
-drop trigger if exists tracks_set_updated_at on tracks;
-create trigger tracks_set_updated_at before update on tracks
-  for each row execute function set_updated_at();
-
-drop trigger if exists urges_set_updated_at on urges;
-create trigger urges_set_updated_at before update on urges
-  for each row execute function set_updated_at();
-
--- ── auto-create a profile row on signup ─────────────────────────────────────
-
-create or replace function handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id) values (new.id)
-  on conflict (id) do nothing;
-  return new;
-end;
-$$ language plpgsql security definer set search_path = public;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created after insert on auth.users
-  for each row execute function handle_new_user();
-
--- ── Row Level Security ──────────────────────────────────────────────────────
--- A user can only ever see or write their own rows. No table here is
--- readable across users — there is no social/comparison feature in this
--- product (master doc §7.7) and no reason for cross-user access to exist.
-
-alter table profiles enable row level security;
-alter table tracks enable row level security;
-alter table consumption_events enable row level security;
-alter table urges enable row level security;
-alter table lapses enable row level security;
-alter table check_ins enable row level security;
-alter table thread_beads enable row level security;
-alter table implementation_intentions enable row level security;
-
-drop policy if exists "own profile" on profiles;
-create policy "own profile" on profiles for all
-  using (auth.uid() = id) with check (auth.uid() = id);
-
-drop policy if exists "own tracks" on tracks;
-create policy "own tracks" on tracks for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "own consumption_events" on consumption_events;
-create policy "own consumption_events" on consumption_events for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "own urges" on urges;
-create policy "own urges" on urges for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "own lapses" on lapses;
-create policy "own lapses" on lapses for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "own check_ins" on check_ins;
-create policy "own check_ins" on check_ins for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "own thread_beads" on thread_beads;
-create policy "own thread_beads" on thread_beads for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "own implementation_intentions" on implementation_intentions;
-create policy "own implementation_intentions" on implementation_intentions for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- ── Export helper ────────────────────────────────────────────────────────────
+-- Data export (§23) is a "select everything where user_id = me" job. Kept as a
+-- security-invoker function so RLS still applies: the caller can only ever
+-- export their own rows, even if this is called from a client.
+create or replace function public.export_my_data()
+returns jsonb
+language sql
+security invoker
+stable
+as $$
+  select jsonb_build_object(
+    'profile', (select to_jsonb(p) from public.profiles p where p.id = auth.uid()),
+    'cigarette_logs', coalesce((select jsonb_agg(to_jsonb(c)) from public.cigarette_logs c where c.user_id = auth.uid()), '[]'::jsonb),
+    'craving_logs', coalesce((select jsonb_agg(to_jsonb(c)) from public.craving_logs c where c.user_id = auth.uid()), '[]'::jsonb),
+    'price_history', coalesce((select jsonb_agg(to_jsonb(p)) from public.price_history p where p.user_id = auth.uid()), '[]'::jsonb),
+    'goals', coalesce((select jsonb_agg(to_jsonb(g)) from public.goals g where g.user_id = auth.uid()), '[]'::jsonb),
+    'ai_memory', (select to_jsonb(m) from public.ai_memory m where m.user_id = auth.uid())
+  );
+$$;

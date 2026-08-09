@@ -1,84 +1,60 @@
 // src/components/AppLockGate.tsx
-// BiometricPrompt with device-credential fallback, master doc §15.3. Fails
-// open (no gate shown) if the device has no enrolled credential at all —
-// we never want to lock a real user out of a crisis-adjacent app because of
-// a hardware limitation.
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
+// Optional biometric lock (§22). Off by default: this is a phone people open
+// mid-craving, and a lock screen between the user and the delay timer is real
+// friction. When they do turn it on, the reason is usually that someone else
+// picks up the phone — so it has to be a genuine gate, not a dismissible one.
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useDhruvStore } from '../store/useDhruvStore';
-import { Colors, FontFamily, FontSize, Spacing, Radius } from '../constants/theme';
-import { useTranslation } from '../hooks/useTranslation';
+import { useAppStore } from '../store/useAppStore';
+import { useTheme } from '../theme/ThemeProvider';
+import { AppText, PrimaryButton } from './ui';
 
 export function AppLockGate({ children }: { children: React.ReactNode }) {
-  const enabled = useDhruvStore((s) => s.profile?.settings.appLockEnabled ?? false);
-  const { t } = useTranslation();
-  const [locked, setLocked] = useState(enabled);
-  const [canUseLock, setCanUseLock] = useState(false);
-  // The hardware/enrolment check is async. Until it resolves we must not
-  // render children: the threat model here is someone holding the unlocked
-  // phone (master doc §15.1), and even a one-frame flash of the Thread or a
-  // lapse entry defeats the lock entirely.
-  const [capabilityChecked, setCapabilityChecked] = useState(false);
+  const enabled = useAppStore((s) => s.profile?.appLockEnabled ?? false);
+  const [unlocked, setUnlocked] = useState(!enabled);
+  const theme = useTheme();
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (mounted) setCanUseLock(hasHardware && enrolled);
-      } catch {
-        // Treat an unavailable module as "cannot lock" — never trap the user
-        // out of a crisis-adjacent app because of a hardware quirk.
-        if (mounted) setCanUseLock(false);
-      } finally {
-        if (mounted) setCapabilityChecked(true);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
+  const authenticate = useCallback(async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock SmokeLess AI',
+        disableDeviceFallback: false,
+      });
+      setUnlocked(result.success);
+    } catch {
+      // A device with no enrolled biometric must not become a locked-out
+      // device: fail open rather than trapping the user out of their data.
+      setUnlocked(true);
+    }
   }, []);
 
   useEffect(() => {
-    if (!capabilityChecked) return;
-    setLocked(enabled && canUseLock);
-  }, [enabled, canUseLock, capabilityChecked]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'background' && enabled && canUseLock) setLocked(true);
-    });
-    return () => sub.remove();
-  }, [enabled, canUseLock]);
-
-  const unlock = async () => {
-    try {
-      const result = await LocalAuthentication.authenticateAsync({ disableDeviceFallback: false });
-      if (result.success) setLocked(false);
-    } catch {
-      // Silent — user can retry the button.
+    if (!enabled) {
+      setUnlocked(true);
+      return;
     }
-  };
+    void authenticate();
+  }, [enabled, authenticate]);
 
-  // Blank (not children) while we don't yet know whether to lock.
-  if (enabled && !capabilityChecked) return <View style={styles.root} />;
-  if (!locked) return <>{children}</>;
+  if (unlocked) return <>{children}</>;
 
   return (
-    <View style={styles.root}>
-      <Text style={styles.title}>{t.appName}</Text>
-      <TouchableOpacity style={styles.unlockBtn} onPress={unlock}>
-        <Text style={styles.unlockBtnText}>{t.settingsAppLock}</Text>
-      </TouchableOpacity>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: theme.spacing.xxl,
+        gap: theme.spacing.xl,
+      }}
+    >
+      <AppText variant="title" center>
+        SmokeLess AI
+      </AppText>
+      <PrimaryButton label="Unlock" onPress={() => void authenticate()} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.nishith, alignItems: 'center', justifyContent: 'center', gap: Spacing.xl },
-  title: { fontFamily: FontFamily.regular, fontSize: FontSize.xxxl, color: Colors.bhor },
-  unlockBtn: { backgroundColor: Colors.nil, borderRadius: Radius.full, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
-  unlockBtnText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, color: Colors.bone },
-});

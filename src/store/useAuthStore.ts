@@ -1,52 +1,54 @@
 // src/store/useAuthStore.ts
-// Tracks the Supabase session so routing (app/index.tsx) can decide between
-// /auth, /onboarding, and the tabs. Centralized here so both the root layout
-// and the router only need one subscription, and so a sign-out anywhere in
-// the app (e.g. from Settings) is reflected everywhere immediately.
+// Session state (§18). An account is optional in this app: without one every
+// feature still works and the data simply never leaves the phone. That means
+// nothing in the UI may block on `session` being non-null.
+
+import type { Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import { Session } from '@supabase/supabase-js';
-import { supabase, hasSupabaseConfig } from '../lib/supabase';
-import { hydrateFromRemote, clearLocalState } from '../lib/auth';
+import { hasSupabaseConfig, supabase } from '../services/supabase/client';
 
 interface AuthState {
+  /** False until the first session check finishes — the splash gate waits on this. */
   checked: boolean;
   session: Session | null;
-  init: () => void;
+  init: () => Promise<void>;
+  setSession: (session: Session | null) => void;
+  signOut: () => Promise<void>;
 }
-
-let initialized = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
   checked: false,
   session: null,
 
-  init: () => {
-    if (initialized) return;
-    initialized = true;
-
+  init: async () => {
     if (!hasSupabaseConfig()) {
-      // No backend configured — treat as "checked, signed out" so the app
-      // still boots and shows the auth screen with a clear setup message,
-      // instead of hanging on a splash screen forever.
       set({ checked: true, session: null });
       return;
     }
+    try {
+      const { data } = await supabase.auth.getSession();
+      set({ session: data.session, checked: true });
+      supabase.auth.onAuthStateChange((_event, session) => set({ session }));
+    } catch {
+      // Offline at cold start is normal; a stored session refreshes later.
+      set({ checked: true });
+    }
+  },
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) await hydrateFromRemote();
-      set({ checked: true, session: data.session });
-    });
+  setSession: (session) => set({ session }),
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await hydrateFromRemote();
-        set({ session, checked: true });
-      } else if (event === 'SIGNED_OUT') {
-        clearLocalState();
-        set({ session: null, checked: true });
-      } else {
-        set({ session, checked: true });
+  signOut: async () => {
+    if (hasSupabaseConfig()) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Clearing local session state matters more than the round trip.
       }
-    });
+    }
+    set({ session: null });
   },
 }));
+
+export function userId(): string | null {
+  return useAuthStore.getState().session?.user.id ?? null;
+}

@@ -1,33 +1,16 @@
-// app/index.tsx — entry router. Full account-based backend: no session
-// means /auth, not the app. useAuthStore.init() (called in _layout.tsx) has
-// already resolved by the time this mounts, and hydrateFromRemote() has
-// already run for an existing session, so `profile` reflects server state.
-import { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
-import { useDhruvStore } from '../src/store/useDhruvStore';
-import { useAuthStore } from '../src/store/useAuthStore';
-import { Colors } from '../src/constants/theme';
+// app/index.tsx — Screen 1: Splash
+// The loading gate. app/_layout.tsx has already awaited the database, the
+// stored profile and the session by the time this renders, so this is a pure
+// routing decision with nothing left to wait for.
 
-export default function Index() {
-  const profile = useDhruvStore((s) => s.profile);
-  const session = useAuthStore((s) => s.session);
+import { Redirect } from 'expo-router';
+import { useAppStore } from '../src/store/useAppStore';
 
-  useEffect(() => {
-    if (!session) {
-      router.replace('/auth');
-      return;
-    }
-    if (!profile || !profile.onboardingComplete) {
-      router.replace('/onboarding');
-    } else {
-      router.replace('/(tabs)');
-    }
-  }, [session, profile]);
+export default function Splash() {
+  const profile = useAppStore((s) => s.profile);
 
-  return <View style={styles.root} />;
+  if (!profile || !profile.onboardingComplete) {
+    return <Redirect href="/(onboarding)/welcome" />;
+  }
+  return <Redirect href="/(tabs)/dashboard" />;
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.nishith },
-});

@@ -1,92 +1,135 @@
 // app/_layout.tsx
-import { useEffect } from 'react';
+// Root layout: fonts, providers, the app lock, and the navigator.
+//
+// Everything the first frame depends on is awaited here rather than in each
+// screen, so no screen ever renders against a half-hydrated store — cold start
+// budget is under two seconds (§27), and the splash holds until we can show
+// the real thing.
+
+import React, { useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
-import { useFonts, NotoSans_400Regular, NotoSans_500Medium, NotoSans_600SemiBold, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
-import { NotoSansDevanagari_400Regular, NotoSansDevanagari_500Medium, NotoSansDevanagari_600SemiBold } from '@expo-google-fonts/noto-sans-devanagari';
-import { NotoSansBengali_400Regular, NotoSansBengali_500Medium, NotoSansBengali_600SemiBold } from '@expo-google-fonts/noto-sans-bengali';
-import { TiroDevanagariHindi_400Regular } from '@expo-google-fonts/tiro-devanagari-hindi';
-import { TiroBangla_400Regular } from '@expo-google-fonts/tiro-bangla';
-import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import * as SplashScreen from 'expo-splash-screen';
-import * as Updates from 'expo-updates';
-import { useDhruvStore } from '../src/store/useDhruvStore';
-import { useAuthStore } from '../src/store/useAuthStore';
-import { AppLockGate } from '../src/components/AppLockGate';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
+import { Fraunces_400Regular, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
+import {
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from '@expo-google-fonts/manrope';
+import {
+  NotoSansDevanagari_400Regular,
+  NotoSansDevanagari_500Medium,
+  NotoSansDevanagari_600SemiBold,
+} from '@expo-google-fonts/noto-sans-devanagari';
+import {
+  NotoSansBengali_400Regular,
+  NotoSansBengali_500Medium,
+  NotoSansBengali_600SemiBold,
+} from '@expo-google-fonts/noto-sans-bengali';
 
-SplashScreen.preventAutoHideAsync();
+import { AppLockGate } from '../src/components/AppLockGate';
+import { getDb } from '../src/services/db/localDb';
+import { loadMemory } from '../src/services/ai/memory';
+import { syncNow } from '../src/services/sync/syncQueue';
+import { useAppStore } from '../src/store/useAppStore';
+import { useAuthStore } from '../src/store/useAuthStore';
+import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
+
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const loadFromStorage = useDhruvStore((s) => s.loadFromStorage);
-  const hydrated = useDhruvStore((s) => s.hydrated);
-  const profile = useDhruvStore((s) => s.profile);
+  const hydrate = useAppStore((s) => s.hydrate);
+  const hydrated = useAppStore((s) => s.hydrated);
+  const setAiMemory = useAppStore((s) => s.setAiMemory);
   const initAuth = useAuthStore((s) => s.init);
   const authChecked = useAuthStore((s) => s.checked);
-
-  // EAS Update — silently pull & apply the newest OTA bundle on cold start.
-  useEffect(() => {
-    async function syncUpdates() {
-      if (__DEV__ || !Updates.isEnabled) return;
-      try {
-        const update = await Updates.checkForUpdateAsync();
-        if (update.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          await Updates.reloadAsync();
-        }
-      } catch {
-        // Offline — the app keeps running as-is. Everything except the
-        // (deferred) AI companion works fully offline. Master doc §14.
-      }
-    }
-    syncUpdates();
-  }, []);
+  const session = useAuthStore((s) => s.session);
+  const [dbReady, setDbReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
-    NotoSans_400Regular, NotoSans_500Medium, NotoSans_600SemiBold, NotoSans_700Bold,
-    NotoSansDevanagari_400Regular, NotoSansDevanagari_500Medium, NotoSansDevanagari_600SemiBold,
-    NotoSansBengali_400Regular, NotoSansBengali_500Medium, NotoSansBengali_600SemiBold,
-    TiroDevanagariHindi_400Regular, TiroBangla_400Regular,
-    IBMPlexMono_400Regular, IBMPlexMono_500Medium,
+    Fraunces_400Regular,
+    Fraunces_600SemiBold,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    NotoSansDevanagari_400Regular,
+    NotoSansDevanagari_500Medium,
+    NotoSansDevanagari_600SemiBold,
+    NotoSansBengali_400Regular,
+    NotoSansBengali_500Medium,
+    NotoSansBengali_600SemiBold,
   });
 
   useEffect(() => {
-    loadFromStorage();
-    initAuth();
-  }, []);
+    void hydrate();
+    void initAuth();
+    void getDb()
+      .then(() => setDbReady(true))
+      // A database that won't open is fatal to the point of the app, but
+      // blocking on the splash forever is worse than letting the user in to a
+      // screen that can say so.
+      .catch(() => setDbReady(true));
+    void loadMemory().then(setAiMemory);
+  }, [hydrate, initAuth, setAiMemory]);
+
+  // Drain the sync queue whenever a session appears. Nothing awaits it.
+  useEffect(() => {
+    if (session?.user.id) void syncNow(session.user.id);
+  }, [session?.user.id]);
+
+  const ready = fontsLoaded && hydrated && authChecked && dbReady;
 
   useEffect(() => {
-    if (fontsLoaded && hydrated && authChecked) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, hydrated, authChecked]);
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
 
-  if (!fontsLoaded || !hydrated || !authChecked) return null;
-
-  const isDark = !profile || profile.settings.themeMode !== 'light';
+  if (!ready) return null;
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <AppLockGate>
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="auth" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
-          {/* Urge is enterable from anywhere, full-screen takeover — master doc §5.2 */}
-          <Stack.Screen name="urge" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-          <Stack.Screen name="lapse" options={{ presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
-          <Stack.Screen name="log" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="checkin" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="crisis" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="add-track" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        </Stack>
-      </AppLockGate>
+    <GestureHandlerRootView style={styles.flex}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AppLockGate>
+            <Navigator />
+          </AppLockGate>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-const styles = StyleSheet.create({ root: { flex: 1 } });
+function Navigator() {
+  const theme = useTheme();
+  return (
+    <>
+      <StatusBar style={theme.isDark ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.background },
+          animation: theme.reduceMotion ? 'none' : 'default',
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(onboarding)" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        {/* The craving flow is a full-screen takeover: it is the one moment
+            where the rest of the app should stop existing. */}
+        <Stack.Screen
+          name="craving"
+          options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+        />
+        <Stack.Screen name="log" options={{ presentation: 'modal' }} />
+      </Stack>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({ flex: { flex: 1 } });

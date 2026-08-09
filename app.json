@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Dhruv",
+    "name": "SmokeLess AI",
     "slug": "smokeless-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "dhruv",
+    "scheme": "smokelessai",
     "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundColor": "#101426"
+        "backgroundColor": "#0F1520"
       },
       "package": "com.smokeless.ai"
     },
@@ -34,32 +34,31 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      "expo-sqlite",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0F1520",
+          "dark": {
+            "backgroundColor": "#0F1520"
+          },
+          "imageWidth": 180
+        }
+      ],
       [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
-          "color": "#F0C070",
+          "color": "#E8A33D",
           "sounds": []
         }
       ],
-      "expo-localization",
-      "expo-secure-store",
-      "expo-splash-screen",
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Dhruv uses Face ID to keep your entries private."
-        }
-      ],
-      [
-        "expo-quick-actions",
-        {
-          "androidIcons": {
-            "urge": {
-              "foregroundImage": "./assets/android-icon-monochrome.png",
-              "backgroundColor": "#101426"
-            }
-          }
+          "faceIDPermission": "SmokeLess AI uses Face ID to keep your logs private."
         }
       ]
     ],

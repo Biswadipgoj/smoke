@@ -3,9 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -14,5 +12,13 @@
     ".expo/types/**/*.d.ts",
     "expo-env.d.ts",
     ".expo/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    // Deno, not React Native: it uses `Deno.serve` and .ts import specifiers,
+    // neither of which type-checks under the app's config. Its shared imports
+    // (supabase/functions/_shared/**) are still checked here, because
+    // src/services/ai/* re-exports them into the app's program.
+    "supabase/functions/ai-coach"
   ]
 }
