@@ -3,7 +3,7 @@ name: EAS Build Android
 on:
   push:
     branches:
-      - main
+      - master
     tags:
       - 'v*'
   workflow_dispatch:

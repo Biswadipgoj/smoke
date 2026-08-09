@@ -1,176 +1,184 @@
-// app/settings.tsx
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
-import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDhruvStore } from '../src/store/useDhruvStore';
-import { useTranslation } from '../src/hooks/useTranslation';
-import { Colors, FontFamily, FontSize, Spacing, Radius } from '../src/constants/theme';
-import { localeLabels, Locale } from '../src/constants/translations';
-import { ThemeMode, Settings } from '../src/domain/types';
-import { signOut, clearLocalState } from '../src/lib/auth';
+// app/settings.tsx — §25 screen 18.
+//
+// Language, coach style, price, app lock, and the routes out. §25 notes the
+// price editor was missing from the earlier build; it's here, and it appends
+// a new price point rather than editing the old one, so history stays honest
+// (§15).
 
-export default function SettingsScreen() {
-  const { t } = useTranslation();
-  const profile = useDhruvStore((s) => s.profile);
-  const updateSettings = useDhruvStore((s) => s.updateSettings);
-  const deleteEverything = useDhruvStore((s) => s.deleteEverything);
-  const settings = profile?.settings;
-  if (!settings) return null;
+import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { View } from 'react-native';
 
-  const confirmSignOut = () => {
-    Alert.alert('Sign out', 'You can sign back in any time — your data stays on the server.', [
-      { text: t.cancel, style: 'cancel' },
-      {
-        text: 'Sign out', onPress: async () => {
-          await signOut();
-          clearLocalState();
-          router.replace('/auth');
-        },
-      },
-    ]);
-  };
+import { Button } from '../src/components/ui/Button';
+import { Card } from '../src/components/ui/Card';
+import { Chip, ChipGroup } from '../src/components/ui/Chip';
+import { Field, Stepper } from '../src/components/ui/Field';
+import { Row } from '../src/components/ui/Row';
+import { Screen } from '../src/components/ui/Screen';
+import { Text } from '../src/components/ui/Text';
+import { DEFAULT_CURRENCY, formatMoney, priceAt } from '../src/features/money/cost';
+import { LANGUAGE_NAMES, useT, type TranslationKey } from '../src/i18n';
+import { setDailyReminder } from '../src/services/notifications';
+import { useAuthStore } from '../src/store/useAuthStore';
+import { useLogsStore } from '../src/store/useLogsStore';
+import { useProfileStore } from '../src/store/useProfileStore';
+import { useTheme } from '../src/theme/ThemeProvider';
+import { COACH_STYLES, LANGUAGES } from '../src/types';
 
-  const confirmDelete = () => {
-    Alert.alert(t.settingsDeleteAll, t.settingsDeleteConfirm, [
-      { text: t.cancel, style: 'cancel' },
-      {
-        text: t.confirm, style: 'destructive', onPress: async () => {
-          await deleteEverything();
-          router.replace('/onboarding');
-        },
-      },
-    ]);
-  };
+export default function Settings() {
+  const theme = useTheme();
+  const t = useT();
+  const router = useRouter();
+
+  const profile = useProfileStore((s) => s.profile);
+  const update = useProfileStore((s) => s.update);
+  const session = useAuthStore((s) => s.session);
+  const signOut = useAuthStore((s) => s.signOut);
+  const prices = useLogsStore((s) => s.prices);
+  const savePrice = useLogsStore((s) => s.savePrice);
+
+  const currentPrice = priceAt(prices, Date.now());
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceDraft, setPriceDraft] = useState(String(currentPrice?.pricePerPack ?? ''));
+  const [perPack, setPerPack] = useState(currentPrice?.cigarettesPerPack ?? 20);
+
+  async function commitPrice() {
+    const value = Number.parseFloat(priceDraft);
+    if (Number.isFinite(value) && value > 0) {
+      // §15 — a new point, not an edit. Everything logged before today keeps
+      // the price it was actually bought at.
+      await savePrice({
+        pricePerPack: value,
+        cigarettesPerPack: perPack,
+        currency: currentPrice?.currency ?? DEFAULT_CURRENCY,
+      });
+    }
+    setEditingPrice(false);
+  }
 
   return (
-    <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{t.youSettingsTitle}</Text>
-
-        <Section label={t.settingsLanguage}>
-          <Row>
-            {(Object.keys(localeLabels) as Locale[]).map((l) => (
-              <Choice key={l} label={localeLabels[l]} active={settings.locale === l} onPress={() => updateSettings({ locale: l })} />
-            ))}
-          </Row>
-        </Section>
-
-        <Section label={t.settingsTheme}>
-          <Row>
-            <Choice label={t.settingsThemeDark} active={settings.themeMode === 'dark'} onPress={() => updateSettings({ themeMode: 'dark' as ThemeMode })} />
-            <Choice label={t.settingsThemeOled} active={settings.themeMode === 'oled'} onPress={() => updateSettings({ themeMode: 'oled' as ThemeMode })} />
-            <Choice label={t.settingsThemeLight} active={settings.themeMode === 'light'} onPress={() => updateSettings({ themeMode: 'light' as ThemeMode })} />
-            <Choice label={t.settingsThemeSystem} active={settings.themeMode === 'system'} onPress={() => updateSettings({ themeMode: 'system' as ThemeMode })} />
-          </Row>
-        </Section>
-
-        <Section label={t.settingsHaptics}>
-          <Row>
-            <Choice label={t.settingsHapticsFull} active={settings.hapticsMode === 'full'} onPress={() => updateSettings({ hapticsMode: 'full' })} />
-            <Choice label={t.settingsHapticsEssential} active={settings.hapticsMode === 'essential'} onPress={() => updateSettings({ hapticsMode: 'essential' })} />
-            <Choice label={t.settingsHapticsOff} active={settings.hapticsMode === 'off'} onPress={() => updateSettings({ hapticsMode: 'off' })} />
-          </Row>
-        </Section>
-
-        <ToggleRow label={t.settingsAppLock} value={settings.appLockEnabled} onChange={(v) => updateSettings({ appLockEnabled: v })} />
-        <ToggleRow label={t.settingsStealthMode} value={settings.stealthModeEnabled} onChange={(v) => updateSettings({ stealthModeEnabled: v })} />
-        <ToggleRow label={t.settingsNotifications} value={settings.notificationsEnabled} onChange={(v) => updateSettings({ notificationsEnabled: v })} />
-        <ToggleRow label="Reduce motion" value={settings.reducedMotion} onChange={(v) => updateSettings({ reducedMotion: v })} />
-
-        <Section label={t.settingsCurrency}>
-          <Row>
-            {(['₹', '৳', '$'] as Settings['currency'][]).map((c) => (
-              <Choice key={c} label={c} active={settings.currency === c} onPress={() => updateSettings({ currency: c })} />
-            ))}
-          </Row>
-        </Section>
-
-        <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/crisis')}>
-          <Text style={styles.linkText}>{t.settingsCrisisResources}</Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.sectionLabel, { marginTop: Spacing.xl }]}>Account</Text>
-        <TouchableOpacity style={styles.linkRow} onPress={confirmSignOut}>
-          <Text style={styles.linkText}>Sign out</Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.sectionLabel, { marginTop: Spacing.xl }]}>{t.settingsData}</Text>
-        <TouchableOpacity style={styles.destructiveRow} onPress={confirmDelete}>
-          <Text style={styles.destructiveText}>{t.settingsDeleteAll}</Text>
-        </TouchableOpacity>
-        <Text style={styles.aboutText}>
-          This clears your tracks, events, and history on the server and this device but keeps your
-          account signed in. To delete the account itself, contact support — client apps can't remove
-          an auth account directly (see SETUP.md).
+    <Screen title={t('settings.title')}>
+      <Card>
+        <Text variant="caption" tone="muted" weight="medium">
+          {t('settings.language')}
         </Text>
+        <ChipGroup>
+          {LANGUAGES.map((code) => (
+            <Chip
+              key={code}
+              label={LANGUAGE_NAMES[code]}
+              selected={profile.language === code}
+              onPress={() => {
+                void update({ language: code });
+                // The reminder's title and body are baked in at schedule time,
+                // so a language change has to reschedule it.
+                if (profile.reminderHour !== null) {
+                  void setDailyReminder(profile.reminderHour, code);
+                }
+              }}
+            />
+          ))}
+        </ChipGroup>
+      </Card>
 
-        <Text style={styles.aboutText}>
-          {t.settingsAbout} — Dhruv was created by{' '}
-          <Text style={styles.aboutLink} onPress={() => Linking.openURL('https://biswadip.in')}>
-            Biswodip Goj (biswadip.in)
-          </Text>
-          . The urge and lapse flows work fully offline and sync when you're back online; the
-          companion's open conversation uses a language model from Google when you're online, with
-          a fully offline guided fallback.
+      <Card>
+        <Text variant="caption" tone="muted" weight="medium">
+          {t('settings.coachStyle')}
         </Text>
-      </ScrollView>
-    </SafeAreaView>
+        <ChipGroup>
+          {COACH_STYLES.map((style) => (
+            <Chip
+              key={style}
+              label={t(`style.${style}` as TranslationKey)}
+              selected={profile.coachStyle === style}
+              onPress={() => void update({ coachStyle: style })}
+            />
+          ))}
+        </ChipGroup>
+      </Card>
+
+      <Card>
+        {editingPrice ? (
+          <View style={{ gap: theme.spacing.md }}>
+            <Field
+              label={t('onboarding.price.pricePerPack')}
+              value={priceDraft}
+              onChangeText={setPriceDraft}
+              keyboardType="decimal-pad"
+            />
+            <Stepper
+              label={t('onboarding.price.perPack')}
+              value={perPack}
+              onChange={setPerPack}
+              min={1}
+              max={50}
+            />
+            <Button label={t('common.save')} onPress={() => void commitPrice()} />
+          </View>
+        ) : (
+          <Row
+            label={t('settings.price')}
+            value={
+              currentPrice
+                ? `${formatMoney(currentPrice.pricePerPack, currentPrice.currency)} / ${currentPrice.cigarettesPerPack}`
+                : '—'
+            }
+            onPress={() => setEditingPrice(true)}
+            last
+          />
+        )}
+      </Card>
+
+      <Card muted>
+        <Row
+          label={t('settings.appLock')}
+          description={t('settings.appLockBody')}
+          toggle={{
+            value: profile.appLockEnabled,
+            onValueChange: (value) => void update({ appLockEnabled: value }),
+          }}
+        />
+        <Row
+          label={t('settings.notifications')}
+          value={
+            profile.reminderHour === null
+              ? t('common.notNow')
+              : `${profile.reminderHour.toString().padStart(2, '0')}:00`
+          }
+          onPress={() => router.push('/notifications')}
+        />
+        <Row label={t('settings.goals')} onPress={() => router.push('/goals')} />
+        <Row label={t('settings.health')} onPress={() => router.push('/health')} last />
+      </Card>
+
+      <Card muted>
+        <Row label={t('settings.aiMemory')} onPress={() => router.push('/ai-memory')} />
+        <Row label={t('settings.privacy')} onPress={() => router.push('/privacy')} />
+        <Row label={t('settings.backup')} onPress={() => router.push('/backup')} />
+        <Row label={t('settings.help')} onPress={() => router.push('/help')} />
+        <Row label={t('settings.about')} onPress={() => router.push('/about')} last />
+      </Card>
+
+      <Card muted>
+        {session ? (
+          <Row
+            label={t('settings.signOut')}
+            value={session.user.email ?? undefined}
+            onPress={() => void signOut()}
+          />
+        ) : null}
+        <Row
+          label={t('settings.deleteAccount')}
+          destructive
+          onPress={() => router.push('/delete-account')}
+          last
+        />
+      </Card>
+
+      <Text variant="caption" tone="muted">
+        {t('settings.version', { v: Constants.expoConfig?.version ?? '1.0.0' })}
+      </Text>
+    </Screen>
   );
 }
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={{ marginBottom: Spacing.lg }}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Row({ children }: { children: React.ReactNode }) {
-  return <View style={styles.row}>{children}</View>;
-}
-
-function Choice({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <TouchableOpacity style={[styles.choice, active && styles.choiceActive]} onPress={onPress}>
-      <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <TouchableOpacity style={styles.toggleRow} onPress={() => onChange(!value)}>
-      <Text style={styles.toggleLabel}>{label}</Text>
-      <View style={[styles.toggleTrack, value && styles.toggleTrackActive]}>
-        <View style={[styles.toggleThumb, value && styles.toggleThumbActive]} />
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.nishith },
-  content: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-  title: { fontFamily: FontFamily.semiBold, fontSize: FontSize.xl, color: Colors.bone, marginBottom: Spacing.lg },
-  sectionLabel: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.boneSecondary, marginBottom: Spacing.sm },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  choice: { borderWidth: 1, borderColor: Colors.nilElevated, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs + 2 },
-  choiceActive: { borderColor: Colors.bhor, backgroundColor: Colors.bhorSoft },
-  choiceText: { fontFamily: FontFamily.medium, fontSize: FontSize.sm, color: Colors.boneSecondary },
-  choiceTextActive: { color: Colors.bhor },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.hairline },
-  toggleLabel: { fontFamily: FontFamily.regular, fontSize: FontSize.base, color: Colors.bone },
-  toggleTrack: { width: 44, height: 26, borderRadius: 13, backgroundColor: Colors.nilElevated, padding: 2, justifyContent: 'center' },
-  toggleTrackActive: { backgroundColor: Colors.bhorSoft },
-  toggleThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.boneMuted },
-  toggleThumbActive: { backgroundColor: Colors.bhor, alignSelf: 'flex-end' },
-  linkRow: { paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.hairline },
-  linkText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, color: Colors.bone },
-  destructiveRow: { backgroundColor: Colors.chhaiSoft, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.sm },
-  destructiveText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, color: Colors.bone },
-  aboutText: { fontFamily: FontFamily.regular, fontSize: FontSize.xs, color: Colors.boneMuted, marginTop: Spacing.xxl, lineHeight: FontSize.xs * 1.6 },
-  aboutLink: { color: Colors.bhor, textDecorationLine: 'underline' },
-});

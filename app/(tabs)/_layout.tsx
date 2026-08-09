@@ -1,53 +1,65 @@
 // app/(tabs)/_layout.tsx
-// Three destinations. Not five. Calm requires fewer choices (master doc §5.2).
-// Urge is deliberately NOT a tab — a permanent "Urge" button in the chrome
-// would be a constant craving cue, and cue-conditioning is the mechanism
-// this product fights.
+//
+// Four tabs. §12 — no haptic on tab navigation, which is why nothing here
+// wires one up.
+
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { View, StyleSheet, Platform } from 'react-native';
-import { useTheme } from '../../src/hooks/useTheme';
-import { useTranslation } from '../../src/hooks/useTranslation';
-import { Colors, FontFamily } from '../../src/constants/theme';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
-type IconName = keyof typeof Ionicons.glyphMap;
+import { useT } from '../../src/i18n';
+import { useTheme } from '../../src/theme/ThemeProvider';
 
-function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
-  return (
-    <View style={styles.iconContainer}>
-      <Ionicons name={focused ? name : (`${name}-outline` as IconName)} size={22} color={focused ? Colors.bhor : Colors.tabInactive} />
-    </View>
-  );
-}
-
-export default function TabLayout() {
-  const { colors } = useTheme();
-  const { t } = useTranslation();
+export default function TabsLayout() {
+  const theme = useTheme();
+  const t = useT();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: theme.colors.ember,
+        tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.hairline,
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 85 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
         },
-        tabBarActiveTintColor: Colors.bhor,
-        tabBarInactiveTintColor: Colors.tabInactive,
-        tabBarLabelStyle: { fontFamily: FontFamily.medium, fontSize: 10, marginTop: 2 },
+        tabBarLabelStyle: { fontFamily: theme.font.medium, fontSize: 11 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t.tabToday, tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} /> }} />
-      <Tabs.Screen name="companion" options={{ title: t.tabCompanion, tabBarIcon: ({ focused }) => <TabIcon name="chatbubble-ellipses" focused={focused} /> }} />
-      <Tabs.Screen name="you" options={{ title: t.tabYou, tabBarIcon: ({ focused }) => <TabIcon name="person-circle" focused={focused} /> }} />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: t('tabs.dashboard'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="sunny-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="coach"
+        options={{
+          title: t('tabs.coach'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: t('tabs.analytics'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: t('tabs.profile'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  iconContainer: { alignItems: 'center', justifyContent: 'center' },
-});

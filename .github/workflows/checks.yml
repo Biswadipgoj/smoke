@@ -1,0 +1,44 @@
+name: Checks
+
+# Runs on every push and PR. Deliberately fast and offline: typecheck, the
+# safety-layer parity check, and the §30 eval harness. Nothing here needs an
+# Expo token, so it also runs on forks.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Typecheck, safety parity, prompt evals
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # 22 for --experimental-strip-types, which is how the scripts under
+          # scripts/ run without a TypeScript build step.
+          node-version: 22.x
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🔎 Typecheck
+        run: npm run typecheck
+
+      - name: 🛡 Safety layers in sync
+        run: npm run check:safety
+
+      - name: 🧪 Prompt evals
+        run: npm run eval
+
+      - name: 📦 Bundle for Android
+        # Catches anything that typechecks but can't resolve at bundle time.
+        run: npx expo export --platform android --output-dir /tmp/export

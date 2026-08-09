@@ -1,84 +1,91 @@
 // src/components/AppLockGate.tsx
-// BiometricPrompt with device-credential fallback, master doc §15.3. Fails
-// open (no gate shown) if the device has no enrolled credential at all —
-// we never want to lock a real user out of a crisis-adjacent app because of
-// a hardware limitation.
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
+//
+// §22 — biometric app lock. Worth more here than in most apps: the note field
+// on a craving log is, in aggregate, an addiction history, and the person most
+// likely to pick up this phone is someone the user lives with.
+//
+// The gate covers the app rather than individual screens, and it re-arms when
+// the app goes to the background.
+
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useDhruvStore } from '../store/useDhruvStore';
-import { Colors, FontFamily, FontSize, Spacing, Radius } from '../constants/theme';
-import { useTranslation } from '../hooks/useTranslation';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState, Platform, StyleSheet, View } from 'react-native';
 
-export function AppLockGate({ children }: { children: React.ReactNode }) {
-  const enabled = useDhruvStore((s) => s.profile?.settings.appLockEnabled ?? false);
-  const { t } = useTranslation();
-  const [locked, setLocked] = useState(enabled);
-  const [canUseLock, setCanUseLock] = useState(false);
-  // The hardware/enrolment check is async. Until it resolves we must not
-  // render children: the threat model here is someone holding the unlocked
-  // phone (master doc §15.1), and even a one-frame flash of the Thread or a
-  // lapse entry defeats the lock entirely.
-  const [capabilityChecked, setCapabilityChecked] = useState(false);
+import { useT } from '../i18n';
+import { useProfileStore } from '../store/useProfileStore';
+import { useTheme } from '../theme/ThemeProvider';
+import { Button } from './ui/Button';
+import { Text } from './ui/Text';
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (mounted) setCanUseLock(hasHardware && enrolled);
-      } catch {
-        // Treat an unavailable module as "cannot lock" — never trap the user
-        // out of a crisis-adjacent app because of a hardware quirk.
-        if (mounted) setCanUseLock(false);
-      } finally {
-        if (mounted) setCapabilityChecked(true);
+export function AppLockGate({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+  const t = useT();
+  const enabled = useProfileStore((s) => s.profile.appLockEnabled);
+  const [unlocked, setUnlocked] = useState(!enabled);
+  const [prompting, setPrompting] = useState(false);
+  const appState = useRef(AppState.currentState);
+
+  const authenticate = useCallback(async () => {
+    if (prompting) return;
+    setPrompting(true);
+    try {
+      const supported =
+        Platform.OS !== 'web' &&
+        (await LocalAuthentication.hasHardwareAsync()) &&
+        (await LocalAuthentication.isEnrolledAsync());
+      if (!supported) {
+        // Nothing to authenticate against. Locking the user out of their own
+        // data because the hardware changed would be the worse failure.
+        setUnlocked(true);
+        return;
       }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: t('settings.appLock'),
+        disableDeviceFallback: false,
+      });
+      setUnlocked(result.success);
+    } catch {
+      setUnlocked(true);
+    } finally {
+      setPrompting(false);
+    }
+  }, [prompting, t]);
 
   useEffect(() => {
-    if (!capabilityChecked) return;
-    setLocked(enabled && canUseLock);
-  }, [enabled, canUseLock, capabilityChecked]);
+    if (!enabled) {
+      setUnlocked(true);
+      return;
+    }
+    setUnlocked(false);
+    void authenticate();
+    // authenticate is intentionally excluded: re-running on its identity would
+    // re-prompt every render while the OS sheet is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'background' && enabled && canUseLock) setLocked(true);
+    if (!enabled) return;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (appState.current.match(/active/) && next.match(/inactive|background/)) {
+        setUnlocked(false);
+      }
+      appState.current = next;
     });
     return () => sub.remove();
-  }, [enabled, canUseLock]);
+  }, [enabled]);
 
-  const unlock = async () => {
-    try {
-      const result = await LocalAuthentication.authenticateAsync({ disableDeviceFallback: false });
-      if (result.success) setLocked(false);
-    } catch {
-      // Silent — user can retry the button.
-    }
-  };
-
-  // Blank (not children) while we don't yet know whether to lock.
-  if (enabled && !capabilityChecked) return <View style={styles.root} />;
-  if (!locked) return <>{children}</>;
+  if (!enabled || unlocked) return <>{children}</>;
 
   return (
-    <View style={styles.root}>
-      <Text style={styles.title}>{t.appName}</Text>
-      <TouchableOpacity style={styles.unlockBtn} onPress={unlock}>
-        <Text style={styles.unlockBtnText}>{t.settingsAppLock}</Text>
-      </TouchableOpacity>
+    <View style={[styles.root, { backgroundColor: theme.colors.bgStart, gap: theme.spacing.xl }]}>
+      <Text variant="title" serif tone="onHaze" center>
+        SmokeLess AI
+      </Text>
+      <Button label={t('settings.appLock')} onPress={authenticate} block={false} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.nishith, alignItems: 'center', justifyContent: 'center', gap: Spacing.xl },
-  title: { fontFamily: FontFamily.regular, fontSize: FontSize.xxxl, color: Colors.bhor },
-  unlockBtn: { backgroundColor: Colors.nil, borderRadius: Radius.full, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
-  unlockBtnText: { fontFamily: FontFamily.medium, fontSize: FontSize.base, color: Colors.bone },
+  root: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
 });
