@@ -2,10 +2,16 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // The scripts under scripts/ run through Node's type stripping, which
+    // requires explicit .ts extensions on relative imports.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    // `customConditions: ["react-native"]` in expo's base config stops the
+    // automatic @types sweep from picking these up, and scripts/ needs the
+    // Node built-ins.
+    "types": ["node", "react"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -14,5 +20,9 @@
     ".expo/types/**/*.d.ts",
     "expo-env.d.ts",
     ".expo/types/**/*.ts"
-  ]
+  ],
+  // The edge function targets Deno, not React Native — it has its own globals
+  // and its own runtime, and typechecking it against this config would only
+  // produce noise. Deploy-time checking is `supabase functions deploy`.
+  "exclude": ["node_modules", "supabase/functions"]
 }

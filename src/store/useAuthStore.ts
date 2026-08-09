@@ -1,52 +1,71 @@
 // src/store/useAuthStore.ts
-// Tracks the Supabase session so routing (app/index.tsx) can decide between
-// /auth, /onboarding, and the tabs. Centralized here so both the root layout
-// and the router only need one subscription, and so a sign-out anywhere in
-// the app (e.g. from Settings) is reflected everywhere immediately.
+//
+// §18 — Supabase Auth: email/password and magic link. Google OAuth is one call
+// (`supabase.auth.signInWithOAuth`) once a Google Cloud OAuth client exists,
+// which can't be scaffolded without the project owner's own credentials — see
+// SETUP.md.
+//
+// Signing in is optional throughout. `checked` means "we know whether there's
+// a session", not "there is one".
+
+import type { Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import { Session } from '@supabase/supabase-js';
-import { supabase, hasSupabaseConfig } from '../lib/supabase';
-import { hydrateFromRemote, clearLocalState } from '../lib/auth';
+
+import { hasSupabaseConfig, supabase } from '../services/supabase/client';
+import { syncNow } from '../services/sync';
 
 interface AuthState {
   checked: boolean;
   session: Session | null;
-  init: () => void;
+  /** True when the user explicitly chose to carry on without an account. */
+  init: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<string | null>;
+  signUp: (email: string, password: string) => Promise<string | null>;
+  sendMagicLink: (email: string) => Promise<string | null>;
+  signOut: () => Promise<void>;
 }
-
-let initialized = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
   checked: false,
   session: null,
 
-  init: () => {
-    if (initialized) return;
-    initialized = true;
-
+  init: async () => {
     if (!hasSupabaseConfig()) {
-      // No backend configured — treat as "checked, signed out" so the app
-      // still boots and shows the auth screen with a clear setup message,
-      // instead of hanging on a splash screen forever.
       set({ checked: true, session: null });
       return;
     }
+    try {
+      const { data } = await supabase.auth.getSession();
+      set({ session: data.session, checked: true });
+      supabase.auth.onAuthStateChange((_event, session) => {
+        set({ session });
+        if (session) void syncNow();
+      });
+      if (data.session) void syncNow();
+    } catch {
+      // A backend that can't be reached at launch must not stop the app: the
+      // whole point of §20 is that everything works without one.
+      set({ checked: true, session: null });
+    }
+  },
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) await hydrateFromRemote();
-      set({ checked: true, session: data.session });
-    });
+  signIn: async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error?.message ?? null;
+  },
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await hydrateFromRemote();
-        set({ session, checked: true });
-      } else if (event === 'SIGNED_OUT') {
-        clearLocalState();
-        set({ session: null, checked: true });
-      } else {
-        set({ session, checked: true });
-      }
-    });
+  signUp: async (email, password) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    return error?.message ?? null;
+  },
+
+  sendMagicLink: async (email) => {
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    return error?.message ?? null;
+  },
+
+  signOut: async () => {
+    await supabase.auth.signOut();
+    set({ session: null });
   },
 }));

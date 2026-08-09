@@ -1,33 +1,61 @@
-// app/_layout.tsx
-import { useEffect } from 'react';
+// app/_layout.tsx — the root. Fonts, providers, and the navigation shape.
+
+import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
+import {
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from '@expo-google-fonts/manrope';
+import {
+  NotoSansBengali_400Regular,
+  NotoSansBengali_500Medium,
+  NotoSansBengali_600SemiBold,
+} from '@expo-google-fonts/noto-sans-bengali';
+import {
+  NotoSansDevanagari_400Regular,
+  NotoSansDevanagari_500Medium,
+  NotoSansDevanagari_600SemiBold,
+} from '@expo-google-fonts/noto-sans-devanagari';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
-import { useFonts, NotoSans_400Regular, NotoSans_500Medium, NotoSans_600SemiBold, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
-import { NotoSansDevanagari_400Regular, NotoSansDevanagari_500Medium, NotoSansDevanagari_600SemiBold } from '@expo-google-fonts/noto-sans-devanagari';
-import { NotoSansBengali_400Regular, NotoSansBengali_500Medium, NotoSansBengali_600SemiBold } from '@expo-google-fonts/noto-sans-bengali';
-import { TiroDevanagariHindi_400Regular } from '@expo-google-fonts/tiro-devanagari-hindi';
-import { TiroBangla_400Regular } from '@expo-google-fonts/tiro-bangla';
-import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
-import { useDhruvStore } from '../src/store/useDhruvStore';
-import { useAuthStore } from '../src/store/useAuthStore';
-import { AppLockGate } from '../src/components/AppLockGate';
+import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-SplashScreen.preventAutoHideAsync();
+import { AppLockGate } from '../src/components/AppLockGate';
+import { ThemeProvider } from '../src/theme/ThemeProvider';
+
+// The splash stays up until fonts and the local database are both ready, so
+// the first frame is the real dashboard rather than a flash of unstyled text.
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const loadFromStorage = useDhruvStore((s) => s.loadFromStorage);
-  const hydrated = useDhruvStore((s) => s.hydrated);
-  const profile = useDhruvStore((s) => s.profile);
-  const initAuth = useAuthStore((s) => s.init);
-  const authChecked = useAuthStore((s) => s.checked);
+  const [fontsLoaded] = useFonts({
+    // §10 — Fraunces for milestones and emotional moments.
+    Fraunces_600SemiBold,
+    // Manrope for everything else.
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    // Neither display face covers Devanagari or Bengali (§17).
+    NotoSansDevanagari_400Regular,
+    NotoSansDevanagari_500Medium,
+    NotoSansDevanagari_600SemiBold,
+    NotoSansBengali_400Regular,
+    NotoSansBengali_500Medium,
+    NotoSansBengali_600SemiBold,
+  });
 
-  // EAS Update — silently pull & apply the newest OTA bundle on cold start.
+  // Pull and apply the newest OTA bundle on cold start. Failure is silence:
+  // everything except the AI coach works with no network at all.
   useEffect(() => {
-    async function syncUpdates() {
+    async function applyUpdates() {
       if (__DEV__ || !Updates.isEnabled) return;
       try {
         const update = await Updates.checkForUpdateAsync();
@@ -36,55 +64,60 @@ export default function RootLayout() {
           await Updates.reloadAsync();
         }
       } catch {
-        // Offline — the app keeps running as-is. Everything except the
-        // (deferred) AI companion works fully offline. Master doc §14.
+        // Offline. Carry on with the bundle we have.
       }
     }
-    syncUpdates();
+    void applyUpdates();
   }, []);
 
-  const [fontsLoaded] = useFonts({
-    NotoSans_400Regular, NotoSans_500Medium, NotoSans_600SemiBold, NotoSans_700Bold,
-    NotoSansDevanagari_400Regular, NotoSansDevanagari_500Medium, NotoSansDevanagari_600SemiBold,
-    NotoSansBengali_400Regular, NotoSansBengali_500Medium, NotoSansBengali_600SemiBold,
-    TiroDevanagariHindi_400Regular, TiroBangla_400Regular,
-    IBMPlexMono_400Regular, IBMPlexMono_500Medium,
-  });
-
-  useEffect(() => {
-    loadFromStorage();
-    initAuth();
-  }, []);
-
-  useEffect(() => {
-    if (fontsLoaded && hydrated && authChecked) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, hydrated, authChecked]);
-
-  if (!fontsLoaded || !hydrated || !authChecked) return null;
-
-  const isDark = !profile || profile.settings.themeMode !== 'light';
+  if (!fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <AppLockGate>
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="auth" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
-          {/* Urge is enterable from anywhere, full-screen takeover — master doc §5.2 */}
-          <Stack.Screen name="urge" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-          <Stack.Screen name="lapse" options={{ presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
-          <Stack.Screen name="log" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="checkin" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="crisis" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="add-track" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        </Stack>
-      </AppLockGate>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <StatusBar style="auto" />
+          <AppLockGate>
+            <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+              {/* §7 — the craving flow is a full-screen takeover, enterable
+                  from anywhere. Gestures are off: it should end in an outcome,
+                  not in an accidental swipe. */}
+              <Stack.Screen
+                name="craving"
+                options={{
+                  presentation: 'fullScreenModal',
+                  animation: 'slide_from_bottom',
+                  gestureEnabled: false,
+                }}
+              />
+              <Stack.Screen
+                name="timeline"
+                options={{ animation: 'slide_from_right' }}
+              />
+              <Stack.Screen name="calendar" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="goals" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="health" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="rewards" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="achievements" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="ai-memory" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="backup" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="help" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen
+                name="delete-account"
+                options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+              />
+            </Stack>
+          </AppLockGate>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
